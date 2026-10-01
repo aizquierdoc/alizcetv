@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ArrowLeft, Play, Film, Folder, AlertTriangle, Loader2 } from "lucide-react";
-import FloatingControls from "../components/FloatingControls";
+import TopBar from "../components/TopBar";
 import Focusable from "../components/Focusable";
 import GamepadLegend from "../components/GamepadLegend";
 import { useFocusEngine } from "../hooks/useFocusEngine";
@@ -73,8 +73,8 @@ export default function NetworkBrowser() {
 
   return (
     <div data-testid="folder-screen">
-      <FloatingControls />
-      <main className="relative px-10 lg:px-14 pt-10 pb-24">
+      <TopBar />
+      <main className="relative px-10 lg:px-14 pt-2 pb-24">
         <div className="flex items-center gap-4 mb-6">
           <Focusable
             id="back-btn"

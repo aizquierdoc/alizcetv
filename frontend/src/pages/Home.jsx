@@ -1,11 +1,10 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import FloatingControls from "../components/FloatingControls";
+import TopBar from "../components/TopBar";
 import ContinueWatching from "../components/ContinueWatching";
 import StreamingGrid from "../components/StreamingGrid";
 import NetworkSources from "../components/NetworkSources";
 import ArcadeTile from "../components/ArcadeTile";
-import IptvTile from "../components/IptvTile";
 import GamepadLegend from "../components/GamepadLegend";
 import { useFocusEngine } from "../hooks/useFocusEngine";
 import { coinopsService, isElectron, systemService } from "../services/alizceApi";
@@ -14,7 +13,7 @@ export default function Home() {
   const navigate = useNavigate();
   const { focusFirst } = useFocusEngine({
     enabled: true,
-    onBack: () => { /* Home is the root — never exit */ },
+    onBack: () => { /* root — never exit */ },
     onMenu: () => navigate("/settings"),
     onMinimize: () => systemService.minimize(),
   });
@@ -36,12 +35,11 @@ export default function Home() {
 
   return (
     <div data-testid="home-screen">
-      <FloatingControls />
-      <main className="relative px-10 lg:px-14 pt-10 pb-24">
+      <TopBar />
+      <main className="relative px-10 lg:px-14 pb-24">
         <ContinueWatching onPlay={openPlayer} />
         <StreamingGrid onOpenIptv={openIptv} />
         <NetworkSources onOpenFolder={openFolder} />
-        <IptvTile onLaunch={openIptv} />
         <ArcadeTile onLaunch={launchArcade} />
       </main>
       <GamepadLegend />

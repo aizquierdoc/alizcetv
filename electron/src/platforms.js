@@ -52,8 +52,10 @@ module.exports = {
   },
   youtube: {
     label: "YouTube",
-    web: "https://www.youtube.com/tv", // TV-friendly UI
-    protocol: null, // No official UWP
+    // Piped is an open-source YouTube frontend without ads or trackers.
+    // Uses TV UI user-agent for lean-back layout.
+    web: "https://piped.video",
+    protocol: null,
     hasUwp: false,
     defaultMode: "cinema",
   },

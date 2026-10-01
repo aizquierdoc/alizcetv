@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Radio, Plus, Trash2, RefreshCw, Loader2, Play, AlertTriangle } from "lucide-react";
-import FloatingControls from "../components/FloatingControls";
+import TopBar from "../components/TopBar";
 import Focusable from "../components/Focusable";
 import GamepadLegend from "../components/GamepadLegend";
 import { useFocusEngine } from "../hooks/useFocusEngine";
@@ -81,8 +81,8 @@ export default function Iptv() {
 
   return (
     <div data-testid="iptv-screen">
-      <FloatingControls />
-      <main className="relative px-10 lg:px-14 pt-10 pb-24">
+      <TopBar />
+      <main className="relative px-10 lg:px-14 pt-2 pb-24">
         <div className="flex items-center gap-4 mb-8">
           <Focusable id="iptv-back" testId="btn-iptv-back" onSelect={() => navigate("/")}
             className="w-11 h-11 rounded-xl glass flex items-center justify-center text-white">

@@ -149,21 +149,21 @@ body {
 }
 
 .focusable[data-focused="true"] {
-  transform: scale(1.07) translateY(-4px);
-  outline: 3px solid var(--focus);
+  transform: scale(1.03);
+  outline: 2px solid var(--focus);
   box-shadow:
-    0 0 0 6px rgba(0, 240, 255, 0.08),
-    0 0 32px rgba(0, 240, 255, 0.55),
-    0 20px 48px rgba(0, 0, 0, 0.6);
+    0 0 0 3px rgba(0, 240, 255, 0.15),
+    0 0 18px rgba(0, 240, 255, 0.35),
+    0 10px 24px rgba(0, 0, 0, 0.5);
   z-index: 20;
 }
 
 .focusable[data-focused="true"]::after {
   content: "";
   position: absolute;
-  inset: -6px;
+  inset: -3px;
   border-radius: inherit;
-  border: 1px solid rgba(0, 240, 255, 0.35);
+  border: 1px solid rgba(0, 240, 255, 0.3);
   pointer-events: none;
   animation: focus-pulse 2.2s ease-in-out infinite;
 }

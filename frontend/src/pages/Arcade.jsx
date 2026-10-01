@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Gamepad2, Play } from "lucide-react";
-import FloatingControls from "../components/FloatingControls";
+import TopBar from "../components/TopBar";
 import Focusable from "../components/Focusable";
 import GamepadLegend from "../components/GamepadLegend";
 import { useFocusEngine } from "../hooks/useFocusEngine";
@@ -34,8 +34,8 @@ export default function Arcade() {
 
   return (
     <div data-testid="arcade-screen">
-      <FloatingControls />
-      <main className="relative px-10 lg:px-14 pt-10 pb-24">
+      <TopBar />
+      <main className="relative px-10 lg:px-14 pt-2 pb-24">
         <div className="flex items-center gap-4 mb-8">
           <Focusable
             id="arcade-back"

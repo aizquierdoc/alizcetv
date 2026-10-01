@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, FolderSearch, Save, HardDrive, Film, Gamepad2, Check, Tv, Key, RefreshCw, Loader2, ExternalLink } from "lucide-react";
-import FloatingControls from "../components/FloatingControls";
+import TopBar from "../components/TopBar";
 import Focusable from "../components/Focusable";
 import GamepadLegend from "../components/GamepadLegend";
 import ButtonMappingSection from "../components/ButtonMappingSection";
@@ -79,8 +79,8 @@ export default function Settings() {
 
   return (
     <div data-testid="settings-screen">
-      <FloatingControls />
-      <main className="relative px-10 lg:px-14 pt-10 pb-24 max-w-5xl">
+      <TopBar />
+      <main className="relative px-10 lg:px-14 pt-2 pb-24 max-w-5xl">
         <div className="flex items-center gap-4 mb-10">
           <Focusable
             id="settings-back"

@@ -1,13 +1,11 @@
 import React from "react";
 import Focusable from "./Focusable";
 import { streamingPlatforms } from "../data/mockData";
-import { ExternalLink, Tv } from "lucide-react";
+import { ExternalLink, Tv, Radio } from "lucide-react";
 import { platformService } from "../services/alizceApi";
 
-export default function StreamingGrid() {
-  const handleLaunch = async (id) => {
-    await platformService.launch(id);
-  };
+export default function StreamingGrid({ onOpenIptv }) {
+  const handleLaunch = async (id) => { await platformService.launch(id); };
 
   return (
     <section className="mt-16" data-testid="section-streaming">
@@ -21,7 +19,7 @@ export default function StreamingGrid() {
         </span>
       </div>
 
-      <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-4 lg:gap-5">
+      <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-4 lg:gap-5">
         {streamingPlatforms.map((p) => (
           <Focusable
             key={p.id}
@@ -46,12 +44,28 @@ export default function StreamingGrid() {
                 {p.label}
               </span>
             </div>
-            <ExternalLink
-              size={12}
-              className="absolute top-2 right-2 text-white/60"
-            />
+            <ExternalLink size={12} className="absolute top-2 right-2 text-white/60" />
           </Focusable>
         ))}
+
+        {/* IPTV tile as 10th platform */}
+        <Focusable
+          id="stream-iptv"
+          testId="tile-iptv"
+          onSelect={() => onOpenIptv && onOpenIptv()}
+          className="relative rounded-2xl overflow-hidden aspect-[16/10] group"
+          style={{
+            background:
+              "radial-gradient(circle at 30% 20%, rgba(251,191,36,0.5), transparent 60%), linear-gradient(135deg, #78350f 0%, #431407 100%)",
+          }}
+        >
+          <div className="relative h-full w-full flex flex-col items-center justify-center gap-2 p-3">
+            <Radio size={28} className="text-amber-200 drop-shadow-lg" />
+            <span className="text-[10px] font-mono tracking-[0.25em] uppercase text-white/90">
+              IPTV
+            </span>
+          </div>
+        </Focusable>
       </div>
     </section>
   );
