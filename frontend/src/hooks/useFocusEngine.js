@@ -70,7 +70,7 @@ if (typeof window !== "undefined" && window.alizce?.settings) {
 }
 
 export function useFocusEngine(options = {}) {
-  const { enabled = true, onBack, onMenu, onPlayPause, onMinimize, onShutdown } = options;
+  const { enabled = true, onBack, onMenu, onPlayPause, onMinimize, onShutdown, onFavorite } = options;
   const [focusedId, setFocusedId] = useState(null);
   const focusedRef = useRef(null);
 
@@ -202,7 +202,8 @@ export function useFocusEngine(options = {}) {
         };
         check("accept", confirm);
         check("back", onBack);
-        check("menu", onMenu);
+        // When page provides onFavorite, Y maps to favorite; else to menu.
+        check("menu", onFavorite || onMenu);
         check("playpause", onPlayPause);
         check("minimize", onMinimize);
         check("shutdown", onShutdown);
@@ -211,7 +212,7 @@ export function useFocusEngine(options = {}) {
     };
     raf = requestAnimationFrame(poll);
     return () => cancelAnimationFrame(raf);
-  }, [enabled, move, confirm, onBack, onMenu, onPlayPause, onMinimize, onShutdown]);
+  }, [enabled, move, confirm, onBack, onMenu, onPlayPause, onMinimize, onShutdown, onFavorite]);
 
   return { focusedId, applyFocus, focusFirst, move, confirm };
 }

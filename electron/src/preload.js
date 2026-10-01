@@ -53,6 +53,9 @@ contextBridge.exposeInMainWorld("alizce", {
     removeSource: (id) => ipcRenderer.invoke("iptv:removeSource", id),
     refresh: (id) => ipcRenderer.invoke("iptv:refresh", id),
     getChannels: (id) => ipcRenderer.invoke("iptv:getChannels", id),
+    getEpg: (sourceId, channel) => ipcRenderer.invoke("iptv:getEpg", { sourceId, channel }),
+    toggleFavorite: (sourceId, channelName) => ipcRenderer.invoke("iptv:toggleFavorite", { sourceId, channelName }),
+    getFavorites: (sourceId) => ipcRenderer.invoke("iptv:getFavorites", sourceId),
   },
 
   platform: {

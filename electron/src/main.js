@@ -11,7 +11,7 @@ const SMB2 = require("@marsaud/smb2");
 const PLATFORMS = require("./platforms");
 const { TmdbClient } = require("./tmdb");
 const { installAdBlocker } = require("./adblock");
-const { loadSource } = require("./iptv");
+const { loadSource, programmesAt, xtreamShortEpg } = require("./iptv");
 
 const isDev = process.argv.includes("--dev");
 
@@ -433,11 +433,11 @@ ipcMain.handle("iptv:refresh", async (_e, id) => {
   const src = sources.find((s) => s.id === id);
   if (!src) return { error: "Fuente no encontrada" };
   try {
-    const channels = await loadSource(src);
+    const { channels, epgByChannel } = await loadSource(src);
     const cache = store.get("iptvCache") || {};
-    cache[id] = { fetchedAt: Date.now(), channels };
+    cache[id] = { fetchedAt: Date.now(), channels, epgByChannel: epgByChannel || {} };
     store.set("iptvCache", cache);
-    return { ok: true, count: channels.length };
+    return { ok: true, count: channels.length, hasEpg: Object.keys(epgByChannel || {}).length > 0 };
   } catch (e) {
     return { error: e.message };
   }
@@ -446,6 +446,40 @@ ipcMain.handle("iptv:refresh", async (_e, id) => {
 ipcMain.handle("iptv:getChannels", (_e, id) => {
   const cache = store.get("iptvCache") || {};
   return cache[id]?.channels || [];
+});
+
+// Get current + next programme for a given channel of a given source.
+ipcMain.handle("iptv:getEpg", async (_e, { sourceId, channel }) => {
+  const sources = store.get("iptvSources") || [];
+  const src = sources.find((s) => s.id === sourceId);
+  if (!src) return { now: null, next: null };
+  const cache = store.get("iptvCache") || {};
+  const epg = cache[sourceId]?.epgByChannel;
+  // Try by tvg-id first (XMLTV); fallback to channel name
+  if (epg && channel.tvgId && epg[channel.tvgId]) {
+    return programmesAt(epg[channel.tvgId]);
+  }
+  // Xtream: lazy fetch short EPG per channel
+  if (src.type === "xtream" && channel.xtreamId) {
+    return xtreamShortEpg(src.host, src.user, src.pass, channel.xtreamId);
+  }
+  return { now: null, next: null };
+});
+
+// Toggle favorite for a channel on a given source.
+ipcMain.handle("iptv:toggleFavorite", (_e, { sourceId, channelName }) => {
+  const all = store.get("iptvFavorites") || {};
+  const favs = new Set(all[sourceId] || []);
+  if (favs.has(channelName)) favs.delete(channelName);
+  else favs.add(channelName);
+  all[sourceId] = Array.from(favs);
+  store.set("iptvFavorites", all);
+  return all[sourceId];
+});
+
+ipcMain.handle("iptv:getFavorites", (_e, sourceId) => {
+  const all = store.get("iptvFavorites") || {};
+  return all[sourceId] || [];
 });
 
 // Open file externally (fallback)

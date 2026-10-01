@@ -1,38 +1,33 @@
 // AlizceTV — Platform launch matrix
-// For each streaming platform, three strategies:
-//   - uwp:   Try to launch Windows UWP app via protocol handler.
-//   - cinema: Open an Electron BrowserWindow fullscreen with the official web URL.
-//   - external: Launch default browser (shell.openExternal).
-//
-// The user can override per-platform in Settings. These are the defaults chosen
-// by the real-world availability of UWP apps on Windows 11 as of 2026.
+// For each streaming platform: UWP app (if any), cinema (Edge --app), external browser.
+// Verified URLs and protocols as of Jan 2026.
 
 module.exports = {
   netflix: {
     label: "Netflix",
     web: "https://www.netflix.com",
-    protocol: "netflix://",
+    protocol: "netflix://",   // Netflix UWP (Microsoft Store)
     hasUwp: true,
     defaultMode: "uwp",
   },
   prime: {
     label: "Prime Video",
     web: "https://www.primevideo.com",
-    protocol: "primevideo://",
+    protocol: "primevideo://", // Prime Video UWP (Microsoft Store)
     hasUwp: true,
     defaultMode: "uwp",
   },
   disney: {
     label: "Disney+",
-    web: "https://www.disneyplus.com",
-    protocol: "disneyplus://",
+    web: "https://www.disneyplus.com/es-es",
+    protocol: "disneyplus://",  // Disney+ UWP
     hasUwp: true,
     defaultMode: "uwp",
   },
   hbo: {
     label: "HBO Max",
     web: "https://play.max.com",
-    protocol: null, // No UWP on Windows (Max discontinued the UWP app)
+    protocol: null,            // No UWP on Windows (Max discontinued it)
     hasUwp: false,
     defaultMode: "cinema",
   },
@@ -48,7 +43,7 @@ module.exports = {
     web: "https://tv.apple.com",
     protocol: "com.apple.atv://",
     hasUwp: true,
-    defaultMode: "uwp",
+    defaultMode: "cinema", // User preference — defaults to Edge cinema
   },
   youtube: {
     label: "YouTube",
@@ -67,7 +62,7 @@ module.exports = {
   filmin: {
     label: "Filmin",
     web: "https://www.filmin.es",
-    protocol: null, // No UWP
+    protocol: null,
     hasUwp: false,
     defaultMode: "cinema",
   },

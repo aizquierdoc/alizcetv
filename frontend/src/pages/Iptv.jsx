@@ -1,30 +1,44 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Radio, Plus, Trash2, RefreshCw, Loader2, Play, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Radio, Plus, Trash2, RefreshCw, Loader2, Play, AlertTriangle, Star } from "lucide-react";
 import TopBar from "../components/TopBar";
 import Focusable from "../components/Focusable";
 import GamepadLegend from "../components/GamepadLegend";
 import { useFocusEngine } from "../hooks/useFocusEngine";
 import { iptvService, mpvService, isElectron, systemService } from "../services/alizceApi";
 
+function fmtTime(ms) {
+  const d = new Date(ms);
+  return `${d.getHours().toString().padStart(2,"0")}:${d.getMinutes().toString().padStart(2,"0")}`;
+}
+
 export default function Iptv() {
   const navigate = useNavigate();
   const [sources, setSources] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [channels, setChannels] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [groupFilter, setGroupFilter] = useState("Todos");
   const [showAdd, setShowAdd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [newSource, setNewSource] = useState({ type: "m3u", name: "", url: "", host: "", user: "", pass: "" });
+  const [focusedChannel, setFocusedChannel] = useState(null);
+  const [epg, setEpg] = useState({ now: null, next: null });
+  const epgReqId = useRef(0);
+
+  const toggleFav = async () => {
+    if (!activeId || !focusedChannel) return;
+    const next = await iptvService.toggleFavorite(activeId, focusedChannel.name);
+    setFavorites(next);
+  };
 
   const { focusFirst } = useFocusEngine({
     enabled: true,
     onBack: () => {
       if (showAdd) setShowAdd(false);
-      else if (activeId) setActiveId(null);
       else navigate("/");
     },
-    onMenu: () => navigate("/settings"),
+    onFavorite: toggleFav,
     onMinimize: () => systemService.minimize(),
   });
 
@@ -34,14 +48,59 @@ export default function Iptv() {
     if (list.length && !activeId) setActiveId(list[0].id);
   };
 
-  useEffect(() => { reload(); }, []);
+  useEffect(() => { reload(); /* eslint-disable-next-line */ }, []);
   useEffect(() => {
     if (!activeId) return;
-    iptvService.getChannels(activeId).then((ch) => {
+    Promise.all([iptvService.getChannels(activeId), iptvService.getFavorites(activeId)]).then(([ch, favs]) => {
       setChannels(ch || []);
+      setFavorites(favs || []);
       setTimeout(focusFirst, 120);
     });
   }, [activeId, focusFirst]);
+
+  // Track focus via DOM mutation observer on data-focused
+  useEffect(() => {
+    const check = () => {
+      const el = document.querySelector('[data-focused="true"][data-focus-id^="ch-"]');
+      if (!el) { setFocusedChannel(null); return; }
+      const id = el.getAttribute("data-focus-id");
+      const idx = parseInt(id.replace("ch-", ""), 10);
+      // Use the computed `filtered` from render — read ch data from DOM attribute instead
+      const name = el.getAttribute("data-channel-name");
+      const tvgId = el.getAttribute("data-tvg-id") || null;
+      const xtreamId = el.getAttribute("data-xtream-id") || null;
+      if (!isNaN(idx)) setFocusedChannel({ idx, name, tvgId, xtreamId });
+    };
+    const observer = new MutationObserver(check);
+    observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ["data-focused"] });
+    check();
+    return () => observer.disconnect();
+  }, [channels, favorites, groupFilter]);
+
+  // When focused channel changes, fetch EPG (debounced)
+  useEffect(() => {
+    if (!focusedChannel || !activeId) { setEpg({ now: null, next: null }); return; }
+    const req = ++epgReqId.current;
+    const t = setTimeout(async () => {
+      const res = await iptvService.getEpg(activeId, focusedChannel);
+      if (req === epgReqId.current) setEpg(res || { now: null, next: null });
+    }, 220);
+    return () => clearTimeout(t);
+  }, [focusedChannel, activeId]);
+
+  // Keyboard shortcut: 'y' toggles favorite on focused channel (web + pad fallback)
+  useEffect(() => {
+    const onKey = (e) => {
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (e.key === "y" || e.key === "Y" || e.key === "f" || e.key === "F") {
+        if (focusedChannel) { e.preventDefault(); toggleFav(); }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line
+  }, [focusedChannel]);
 
   const refresh = async (id) => {
     setLoading(true);
@@ -77,7 +136,14 @@ export default function Iptv() {
   };
 
   const groups = ["Todos", ...Array.from(new Set(channels.map((c) => c.group || "Sin grupo")))];
-  const filtered = groupFilter === "Todos" ? channels : channels.filter((c) => (c.group || "Sin grupo") === groupFilter);
+  const groupFiltered = groupFilter === "Todos" ? channels : channels.filter((c) => (c.group || "Sin grupo") === groupFilter);
+  const favSet = new Set(favorites);
+  // Favorites first, then rest preserving order
+  const filtered = [
+    ...groupFiltered.filter((c) => favSet.has(c.name)),
+    ...groupFiltered.filter((c) => !favSet.has(c.name)),
+  ];
+  const favCount = filtered.filter((c) => favSet.has(c.name)).length;
 
   return (
     <div data-testid="iptv-screen">
@@ -162,34 +228,83 @@ export default function Iptv() {
         )}
 
         {!loading && filtered.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {filtered.slice(0, 240).map((ch, i) => (
-              <Focusable key={ch.url + i} id={`ch-${i}`} testId={`ch-${i}`} onSelect={() => playChannel(ch)}
-                className="relative rounded-xl overflow-hidden aspect-[16/10] text-left glass group">
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900/80 to-slate-950/80">
-                  {ch.logo ? (
-                    <img src={ch.logo} alt="" className="max-w-[70%] max-h-[60%] object-contain opacity-90" loading="lazy" onError={(e) => { e.target.style.display = "none"; }} />
-                  ) : (
-                    <Radio size={32} className="text-slate-600" />
-                  )}
+          <>
+            {/* EPG strip for currently focused channel */}
+            {epg.now && (
+              <div className="glass rounded-xl px-5 py-3 mb-5 flex items-start gap-4" data-testid="epg-strip">
+                <div className="flex flex-col items-center shrink-0">
+                  <span className="text-[9px] font-mono tracking-widest uppercase text-amber-300">AHORA</span>
+                  <span className="font-mono text-xs text-slate-200 mt-0.5">{fmtTime(epg.now.start)}{epg.now.stop ? ` – ${fmtTime(epg.now.stop)}` : ""}</span>
                 </div>
-                <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black via-black/60 to-transparent">
-                  <h3 className="font-title text-sm text-white uppercase tracking-wide line-clamp-1">{ch.name}</h3>
-                  <p className="text-[10px] font-mono tracking-widest text-amber-300/80 line-clamp-1">{ch.group}</p>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-title text-sm text-white uppercase tracking-wide truncate" data-testid="epg-now-title">{epg.now.title}</h4>
+                  {epg.now.desc && <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{epg.now.desc}</p>}
                 </div>
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-[&[data-focused='true']]:opacity-100 transition-opacity">
-                  <div className="w-14 h-14 rounded-full bg-amber-400/20 border border-amber-300 flex items-center justify-center shadow-[0_0_30px_rgba(251,191,36,0.8)]">
-                    <Play size={22} className="text-white fill-white ml-1" />
+                {epg.next && (
+                  <div className="hidden md:flex flex-col items-start border-l border-white/10 pl-4 min-w-[180px]">
+                    <span className="text-[9px] font-mono tracking-widest uppercase text-slate-400">LUEGO · {fmtTime(epg.next.start)}</span>
+                    <span className="text-xs text-slate-200 line-clamp-1 mt-0.5" data-testid="epg-next-title">{epg.next.title}</span>
                   </div>
-                </div>
-              </Focusable>
-            ))}
+                )}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {filtered.slice(0, 240).map((ch, i) => {
+              const isFav = favSet.has(ch.name);
+              const isFirstNonFav = i === favCount && favCount > 0;
+              return (
+                <React.Fragment key={ch.url + i}>
+                  {isFirstNonFav && (
+                    <div className="col-span-full text-[10px] font-mono tracking-[0.3em] uppercase text-slate-500 border-t border-white/5 pt-3 mt-1">
+                      Todos los canales
+                    </div>
+                  )}
+                  <Focusable
+                    id={`ch-${i}`} testId={`ch-${i}`}
+                    onSelect={() => playChannel(ch)}
+                    data-channel-name={ch.name}
+                    data-tvg-id={ch.tvgId || ""}
+                    data-xtream-id={ch.xtreamId || ""}
+                    className="relative rounded-xl overflow-hidden aspect-[16/10] text-left glass group"
+                  >
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900/80 to-slate-950/80">
+                      {ch.logo ? (
+                        <img src={ch.logo} alt="" className="max-w-[70%] max-h-[60%] object-contain opacity-90" loading="lazy" onError={(e) => { e.target.style.display = "none"; }} />
+                      ) : (
+                        <Radio size={32} className="text-slate-600" />
+                      )}
+                    </div>
+                    {isFav && (
+                      <div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-amber-400/90 flex items-center justify-center shadow-md" data-testid={`fav-${i}`}>
+                        <Star size={12} className="text-slate-900 fill-slate-900" />
+                      </div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black via-black/60 to-transparent">
+                      <h3 className="font-title text-sm text-white uppercase tracking-wide line-clamp-1">{ch.name}</h3>
+                      <p className="text-[10px] font-mono tracking-widest text-amber-300/80 line-clamp-1">{ch.group}</p>
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-[&[data-focused='true']]:opacity-100 transition-opacity">
+                      <div className="w-14 h-14 rounded-full bg-amber-400/20 border border-amber-300 flex items-center justify-center shadow-[0_0_30px_rgba(251,191,36,0.8)]">
+                        <Play size={22} className="text-white fill-white ml-1" />
+                      </div>
+                    </div>
+                  </Focusable>
+                </React.Fragment>
+              );
+            })}
             {filtered.length > 240 && (
               <div className="col-span-full text-slate-500 text-xs font-mono tracking-widest uppercase mt-2">
                 Mostrando 240 de {filtered.length} canales. Usa un filtro de grupo para acotar.
               </div>
             )}
-          </div>
+            </div>
+
+            {/* Favorites legend */}
+            <div className="mt-6 text-[10px] font-mono tracking-widest uppercase text-slate-500">
+              Pulsa <span className="text-amber-300">Y</span> en un canal enfocado para añadirlo/quitarlo de favoritos.
+            </div>
+          </>
         )}
 
         {/* Add source modal */}

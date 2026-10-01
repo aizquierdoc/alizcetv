@@ -129,9 +129,7 @@ export const coinopsService = {
 export const iptvService = {
   async listSources() {
     if (api) return api.iptv.listSources();
-    return [
-      { id: "demo-m3u", name: "Lista Demo (ejemplo)", type: "m3u", url: "https://example.com/demo.m3u" },
-    ];
+    return [{ id: "demo-m3u", name: "Lista Demo (ejemplo)", type: "m3u", url: "https://example.com/demo.m3u" }];
   },
   async addSource(src) { if (api) return api.iptv.addSource(src); return { id: "demo", ...src }; },
   async removeSource(id) { if (api) return api.iptv.removeSource(id); return []; },
@@ -139,11 +137,28 @@ export const iptvService = {
   async getChannels(id) {
     if (api) return api.iptv.getChannels(id);
     return [
-      { name: "La 1 HD", group: "España · TDT", logo: null, url: "demo://la1" },
-      { name: "La 2", group: "España · TDT", logo: null, url: "demo://la2" },
-      { name: "DAZN F1 HD", group: "Deportes", logo: null, url: "demo://dazn-f1" },
-      { name: "Movistar LaLiga", group: "Deportes", logo: null, url: "demo://movistar-liga" },
+      { name: "La 1 HD", tvgId: "la1.es", group: "España · TDT", logo: null, url: "demo://la1" },
+      { name: "La 2", tvgId: "la2.es", group: "España · TDT", logo: null, url: "demo://la2" },
+      { name: "DAZN F1 HD", tvgId: "dazn.f1", group: "Deportes", logo: null, url: "demo://dazn-f1" },
+      { name: "Movistar LaLiga", tvgId: "movistar.liga", group: "Deportes", logo: null, url: "demo://movistar-liga" },
     ];
+  },
+  async getEpg(sourceId, channel) {
+    if (api) return api.iptv.getEpg(sourceId, channel);
+    // Demo EPG
+    const demo = {
+      "la1.es": { now: { title: "Telediario", start: Date.now() - 600000, stop: Date.now() + 2400000 }, next: { title: "Cine de barrio", start: Date.now() + 2400000, stop: Date.now() + 6000000 } },
+      "dazn.f1": { now: { title: "F1 GP Japón · Carrera", start: Date.now() - 1800000, stop: Date.now() + 3600000 }, next: null },
+    };
+    return demo[channel.tvgId] || { now: null, next: null };
+  },
+  async toggleFavorite(sourceId, channelName) {
+    if (api) return api.iptv.toggleFavorite(sourceId, channelName);
+    return [channelName];
+  },
+  async getFavorites(sourceId) {
+    if (api) return api.iptv.getFavorites(sourceId);
+    return [];
   },
 };
 
