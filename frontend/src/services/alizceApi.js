@@ -92,6 +92,34 @@ export const cwService = {
   },
 };
 
+// ----- Streaming platforms -----
+export const platformService = {
+  async list() {
+    if (api) return api.platform.list();
+    // Mock list (same as streamingPlatforms)
+    const { streamingPlatforms } = await import("../data/mockData");
+    return streamingPlatforms.map((p) => ({
+      id: p.id,
+      label: p.label,
+      web: p.url,
+      hasUwp: !["hbo", "youtube", "filmin"].includes(p.id),
+      mode: ["hbo", "youtube", "filmin"].includes(p.id) ? "cinema" : "uwp",
+    }));
+  },
+  async launch(id) {
+    if (api) return api.platform.launch(id);
+    // Web demo fallback: open the official web URL in a new tab.
+    const { streamingPlatforms } = await import("../data/mockData");
+    const p = streamingPlatforms.find((x) => x.id === id);
+    if (p) window.open(p.url, "_blank", "noopener");
+    return { ok: true, mode: "external" };
+  },
+  async setMode(id, mode) {
+    if (api) return api.platform.setMode(id, mode);
+    return { id, mode };
+  },
+};
+
 // ----- CoinOps -----
 export const coinopsService = {
   async launch() {

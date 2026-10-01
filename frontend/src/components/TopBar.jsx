@@ -31,9 +31,11 @@ export default function TopBar() {
     >
       {/* Logo */}
       <div className="flex items-center gap-4" data-testid="brand-logo">
-        <div className="w-11 h-11 rounded-xl glass-strong flex items-center justify-center">
-          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-cyan-400 via-sky-500 to-indigo-500 shadow-[0_0_18px_rgba(56,189,248,0.75)]" />
-        </div>
+        <img
+          src="/logo.svg"
+          alt="AlizceTV"
+          className="w-14 h-14 drop-shadow-[0_0_16px_rgba(56,189,248,0.55)]"
+        />
         <div>
           <h1 className="font-title text-3xl lg:text-4xl logo-gradient leading-none">
             ALIZCE<span className="opacity-80">TV</span>

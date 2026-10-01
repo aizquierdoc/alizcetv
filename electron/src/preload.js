@@ -38,4 +38,10 @@ contextBridge.exposeInMainWorld("alizce", {
   shell: {
     open: (path) => ipcRenderer.invoke("shell:open", path),
   },
+
+  platform: {
+    list: () => ipcRenderer.invoke("platform:list"),
+    launch: (id) => ipcRenderer.invoke("platform:launch", id),
+    setMode: (id, mode) => ipcRenderer.invoke("platform:setMode", { id, mode }),
+  },
 });

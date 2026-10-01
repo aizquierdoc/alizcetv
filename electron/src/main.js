@@ -8,6 +8,7 @@ const { spawn } = require("child_process");
 const net = require("net");
 const Store = require("electron-store");
 const SMB2 = require("@marsaud/smb2");
+const PLATFORMS = require("./platforms");
 
 const isDev = process.argv.includes("--dev");
 
@@ -22,6 +23,7 @@ const store = new Store({
     coinopsPath: "",
     mpvPath: "",
     continueWatching: [],
+    platformModes: {}, // { netflix: 'uwp'|'cinema'|'external', ... }
   },
 });
 
@@ -274,3 +276,79 @@ ipcMain.handle("mpv:stop", async () => { killMpv(); return { ok: true }; });
 
 // Open file externally (fallback)
 ipcMain.handle("shell:open", async (_e, p) => shell.openPath(p));
+
+// ---------- Streaming platform launcher ----------
+let cinemaWindow = null;
+
+function openCinema(url, label) {
+  if (cinemaWindow) { try { cinemaWindow.close(); } catch (_) {} cinemaWindow = null; }
+  cinemaWindow = new BrowserWindow({
+    width: 1920,
+    height: 1080,
+    fullscreen: true,
+    frame: false,
+    backgroundColor: "#000000",
+    title: `AlizceTV — ${label}`,
+    icon: path.join(__dirname, "..", "build", "icon.ico"),
+    webPreferences: { contextIsolation: true, nodeIntegration: false },
+  });
+  cinemaWindow.setMenuBarVisibility(false);
+  cinemaWindow.loadURL(url, { userAgent:
+    "Mozilla/5.0 (SMART-TV; Linux; Tizen 6.5) AppleWebKit/537.36 (KHTML, like Gecko) 85.0.4183.93/6.5 TV Safari/537.36"
+  });
+  // ESC / Backspace / Gamepad B closes cinema and returns to AlizceTV
+  cinemaWindow.webContents.on("before-input-event", (event, input) => {
+    if (input.type === "keyDown" && (input.key === "Escape" || input.key === "Backspace")) {
+      try { cinemaWindow.close(); } catch (_) {}
+    }
+  });
+  cinemaWindow.on("closed", () => {
+    cinemaWindow = null;
+    mainWindow?.focus();
+  });
+}
+
+ipcMain.handle("platform:launch", async (_e, id) => {
+  const def = PLATFORMS[id];
+  if (!def) return { error: `Plataforma desconocida: ${id}` };
+  const overrides = store.get("platformModes") || {};
+  let mode = overrides[id] || def.defaultMode;
+  // Fallback if user chose UWP but platform has no protocol
+  if (mode === "uwp" && !def.protocol) mode = "cinema";
+
+  try {
+    if (mode === "uwp") {
+      // Attempt protocol launch. On Windows if the app isn't installed,
+      // Windows shows a dialog "Open with"; we fallback to cinema in 2s.
+      shell.openExternal(def.protocol);
+      return { ok: true, mode };
+    }
+    if (mode === "external") {
+      shell.openExternal(def.web);
+      return { ok: true, mode };
+    }
+    // cinema
+    openCinema(def.web, def.label);
+    return { ok: true, mode };
+  } catch (e) {
+    return { error: e.message };
+  }
+});
+
+ipcMain.handle("platform:list", () => {
+  const overrides = store.get("platformModes") || {};
+  return Object.entries(PLATFORMS).map(([id, def]) => ({
+    id,
+    label: def.label,
+    web: def.web,
+    hasUwp: def.hasUwp,
+    mode: overrides[id] || def.defaultMode,
+  }));
+});
+
+ipcMain.handle("platform:setMode", (_e, { id, mode }) => {
+  const modes = store.get("platformModes") || {};
+  modes[id] = mode;
+  store.set("platformModes", modes);
+  return modes;
+});

@@ -11,7 +11,7 @@ reproductor MPV embebido y lanzador para CoinOps.
 3. **mpv.exe** (reproductor):
    - Descarga el build Windows x86_64 desde https://sourceforge.net/projects/mpv-player-windows/files/64bit/
    - Descomprime `mpv.exe` dentro de `electron/vendor/mpv/mpv.exe`
-4. **Icono** `build/icon.ico` (256x256 .ico). Cuando me pases el logo lo reemplazamos.
+4. **Icono** `build/icon.ico` ya incluido (generado desde `logo.svg` — reemplázalo si quieres).
 
 ## Compilar paso a paso
 
@@ -57,13 +57,35 @@ npm run dist-portable
 | Volver          | Esc / Backspace| Botón B            |
 | Menú            | M              | Botón Y            |
 
+## Streaming platforms — comportamiento por plataforma
+
+AlizceTV detecta si cada plataforma tiene **app UWP nativa** en Windows 11.
+Puedes cambiarlo por plataforma en Ajustes.
+
+| Plataforma   | App UWP | Modo por defecto | Acción al pulsar                                                   |
+|--------------|---------|------------------|--------------------------------------------------------------------|
+| Netflix      | Sí      | App              | `netflix://` abre la app UWP                                       |
+| Prime Video  | Sí      | App              | `primevideo://`                                                    |
+| Disney+      | Sí      | App              | `disneyplus://`                                                    |
+| HBO Max      | **No**  | **Modo cine**    | Abre `play.max.com` en ventana AlizceTV sin bordes fullscreen      |
+| Movistar+    | Sí      | App              | `movistarplus://`                                                  |
+| Apple TV+    | Sí      | App              | `com.apple.atv://`                                                 |
+| YouTube      | **No**  | **Modo cine**    | Abre `youtube.com/tv` (UI TV) en ventana sin bordes                |
+| Twitch       | Sí      | App              | `twitch://`                                                        |
+| Filmin       | **No**  | **Modo cine**    | Abre `filmin.es` en ventana sin bordes                             |
+
+En **Modo cine** se abre una `BrowserWindow` fullscreen sin bordes con User-Agent
+Smart TV (muchos sitios muestran su UI optimizada para TV). Pulsando Esc / B del
+pad se cierra y vuelves a AlizceTV.
+
 ## Arquitectura
 
 ```
 electron/
 ├── src/
-│   ├── main.js       Electron main (ventana, IPC, SMB, MPV, CoinOps)
-│   └── preload.js    Context bridge (window.alizce)
+│   ├── main.js       Electron main (ventana, IPC, SMB, MPV, CoinOps, Platforms)
+│   ├── preload.js    Context bridge (window.alizce)
+│   └── platforms.js  Matriz de plataformas con protocolo UWP / web / modo
 ├── scripts/
 │   └── copy-react.js Copia frontend/build → electron/renderer
 ├── vendor/mpv/       Colocar mpv.exe aquí (empaquetado en el instalador)
@@ -80,6 +102,7 @@ El `main.js` expone estas APIs a React vía `window.alizce`:
 - `alizce.mpv.stop()` – cierra MPV
 - `alizce.mpv.onEvent(cb)` – escucha propiedades observadas (tiempo, pause, tracks)
 - `alizce.coinops.launch()` – lanza el ejecutable de CoinOps configurado
+- `alizce.platform.list() / launch(id) / setMode(id, mode)` – gestión y lanzamiento de plataformas de streaming (uwp / cine / externo)
 - `alizce.settings.get() / set(patch) / pickFile(opts)` – ajustes persistentes
 - `alizce.cw.get() / upsert(entry)` – progreso "Continuar viendo" persistido
 

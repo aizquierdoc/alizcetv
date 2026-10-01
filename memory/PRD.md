@@ -44,7 +44,14 @@ TV box app para Windows 11 Home llamada **AlizceTV**: acceso unificado a platafo
 - 9 plataformas streaming (abren web oficial).
 - Reproductor con aspect ratio / subs / audio y estados deshabilitados.
 
-### 2026-01-01 — Capa Electron Windows
+### 2026-01-01 — Logo y Launcher inteligente multi-plataforma
+- Logo generado: `A` monograma con gradiente cian→índigo→violeta, scan line de TV, glow aura, badge "TV" y bordes redondeados en fondo oscuro.
+- Entregables: `electron/build/logo.svg`, `logo-512.png`, `icon-256.png`, `icon.ico` (multi-resolución 16/24/32/48/64/128/256). SVG también en `frontend/public/logo.svg` y usado en TopBar + favicon.
+- **Platform launcher inteligente** (`electron/src/platforms.js`): matriz por plataforma con 3 modos (`uwp` / `cinema` / `external`).
+  - Netflix, Prime, Disney+, Movistar+, Apple TV+, Twitch → **uwp** por defecto (protocolos `netflix://`, `primevideo://`, `disneyplus://`, `movistarplus://`, `com.apple.atv://`, `twitch://`).
+  - HBO Max, YouTube, Filmin → **cinema** por defecto (no tienen UWP en Windows 2026). Se abren en una `BrowserWindow` fullscreen sin bordes con User-Agent Smart TV; Esc / B del pad cierra y vuelve a AlizceTV.
+- Pantalla Ajustes amplía con selector por plataforma (botón `App` deshabilitado si no hay UWP, por ejemplo HBO Max solo deja elegir Cine o Externo).
+- IPC: `platform.list()` / `platform.launch(id)` / `platform.setMode(id, mode)`.
 - `electron/` completo con `main.js` + `preload.js` + `copy-react.js` + `package.json` para `electron-builder`.
 - Config NSIS: instalador `AlizceTV-Setup-1.0.0.exe` + portable, accesos directos escritorio y menú inicio.
 - IPC bridge `window.alizce` seguro con `contextIsolation: true`.

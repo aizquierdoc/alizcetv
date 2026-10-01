@@ -1,9 +1,14 @@
 import React from "react";
 import Focusable from "./Focusable";
 import { streamingPlatforms } from "../data/mockData";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Tv } from "lucide-react";
+import { platformService } from "../services/alizceApi";
 
 export default function StreamingGrid() {
+  const handleLaunch = async (id) => {
+    await platformService.launch(id);
+  };
+
   return (
     <section className="mt-16" data-testid="section-streaming">
       <div className="flex items-baseline justify-between mb-5">
@@ -11,8 +16,8 @@ export default function StreamingGrid() {
           <span className="inline-block w-2 h-6 bg-fuchsia-400 rounded-sm shadow-[0_0_12px_rgba(232,121,249,0.9)]" />
           Plataformas de streaming
         </h2>
-        <span className="text-xs tracking-[0.3em] uppercase text-slate-500 font-mono">
-          9 lanzadores
+        <span className="text-xs tracking-[0.3em] uppercase text-slate-500 font-mono flex items-center gap-2">
+          <Tv size={12} /> App nativa · Modo cine · Externo
         </span>
       </div>
 
@@ -22,7 +27,7 @@ export default function StreamingGrid() {
             key={p.id}
             id={`stream-${p.id}`}
             testId={`tile-${p.id}`}
-            onSelect={() => window.open(p.url, "_blank", "noopener")}
+            onSelect={() => handleLaunch(p.id)}
             className="relative rounded-2xl overflow-hidden aspect-[16/10] group"
             style={{ background: p.bg }}
           >

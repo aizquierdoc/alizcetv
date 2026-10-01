@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, FolderSearch, Save, HardDrive, Film, Gamepad2, Check } from "lucide-react";
+import { ArrowLeft, FolderSearch, Save, HardDrive, Film, Gamepad2, Check, Tv } from "lucide-react";
 import TopBar from "../components/TopBar";
 import Focusable from "../components/Focusable";
 import GamepadLegend from "../components/GamepadLegend";
 import { useFocusEngine } from "../hooks/useFocusEngine";
-import { settingsService, isElectron } from "../services/alizceApi";
+import { settingsService, platformService, isElectron } from "../services/alizceApi";
 
 export default function Settings() {
   const navigate = useNavigate();
   const [settings, setSettings] = useState(null);
+  const [platforms, setPlatforms] = useState([]);
   const [saved, setSaved] = useState(false);
 
   const { focusFirst } = useFocusEngine({
@@ -19,6 +20,7 @@ export default function Settings() {
 
   useEffect(() => {
     settingsService.get().then(setSettings);
+    platformService.list().then(setPlatforms);
     const t = setTimeout(focusFirst, 200);
     return () => clearTimeout(t);
   }, [focusFirst]);
@@ -104,6 +106,65 @@ export default function Settings() {
             </Field>
             <div className="text-xs font-mono tracking-widest text-emerald-300/80">
               Acceso en modo Invitado (sin usuario/contraseña).
+            </div>
+          </div>
+        </section>
+
+        {/* Streaming platforms modes */}
+        <section className="mb-10">
+          <h3 className="font-title text-xl text-white tracking-widest uppercase mb-5 flex items-center gap-3">
+            <Tv size={20} className="text-fuchsia-400" /> Plataformas de streaming
+          </h3>
+          <div className="glass rounded-2xl p-6 space-y-4">
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Elige cómo se abre cada plataforma al pulsar su botón.
+              <br />
+              <span className="font-mono text-emerald-300">App nativa</span>: lanza la app UWP de Windows instalada.
+              <span className="font-mono text-cyan-300 ml-2">Modo cine</span>: abre la web oficial en una ventana AlizceTV sin bordes (vuelves con B / Esc).
+              <span className="font-mono text-amber-300 ml-2">Externo</span>: abre tu navegador por defecto.
+            </p>
+            <div className="divide-y divide-white/5">
+              {platforms.map((p) => (
+                <div key={p.id} className="flex items-center justify-between py-3 gap-4" data-testid={`platform-row-${p.id}`}>
+                  <div className="min-w-0">
+                    <div className="font-title text-base text-white uppercase tracking-wider">
+                      {p.label}
+                    </div>
+                    <div className="text-[10px] font-mono tracking-widest text-slate-500 truncate">
+                      {p.hasUwp ? "App UWP disponible" : "Solo web — sin app Windows"}
+                    </div>
+                  </div>
+                  <div className="flex gap-1.5">
+                    {["uwp", "cinema", "external"].map((mode) => {
+                      const disabled = mode === "uwp" && !p.hasUwp;
+                      const active = p.mode === mode;
+                      const labels = { uwp: "App", cinema: "Cine", external: "Externo" };
+                      return (
+                        <Focusable
+                          key={mode}
+                          id={`plat-${p.id}-${mode}`}
+                          testId={`platmode-${p.id}-${mode}`}
+                          onSelect={async () => {
+                            if (disabled) return;
+                            await platformService.setMode(p.id, mode);
+                            setPlatforms((list) => list.map((x) => x.id === p.id ? { ...x, mode } : x));
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-mono tracking-widest uppercase border transition-colors ${
+                            disabled
+                              ? "opacity-30 cursor-not-allowed border-white/5 text-slate-600"
+                              : active
+                                ? "bg-cyan-400 border-cyan-400 text-black"
+                                : "border-white/10 text-slate-300"
+                          }`}
+                          aria-disabled={disabled}
+                        >
+                          {labels[mode]}
+                        </Focusable>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
