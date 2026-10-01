@@ -1,0 +1,32 @@
+{
+  "summary": "Frontend-only verification of IPTV EPG strip, favorites toggle, and platforms.js defaults. All 4 requested behaviors verified via Playwright on preview URL. 1 known mock limitation (un-toggle favorite) is a service mock, not a bug.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_behaviors": [
+    "Hovering ch-0 (La 1 HD, tvgId=la1.es) sets data-focused=true after ~500ms; EPG strip [data-testid='epg-strip'] renders with 'AHORA · TELEDIARIO 16:52 – 17:42' and 'LUEGO · 17:42 · Cine de barrio'",
+    "Pressing 'y' with ch-0 focused adds favorite: [data-testid='fav-0'] star icon appears",
+    "Separator 'Todos los canales' appears between favorites and the rest of the grid",
+    "Legend 'Pulsa Y en un canal enfocado para añadirlo/quitarlo de favoritos.' is rendered below grid",
+    "/app/electron/src/platforms.js: apple defaultMode='cinema' ✓, hbo/youtube/filmin cinema ✓, netflix/prime/disney/movistar/twitch uwp ✓, Disney+ URL uses /es-es locale ✓, all URLs HTTPS and reachable domains (netflix.com, primevideo.com, disneyplus.com/es-es, play.max.com, ver.movistarplus.es, tv.apple.com, youtube.com, twitch.tv, filmin.es)"
+  ],
+  "notes": [
+    "Un-toggling the favorite with a second 'Y' press does NOT remove it in web preview because the mock iptvService.toggleFavorite always returns [channelName] (as documented in agent-to-agent context). This is expected behavior for web demo mode; real toggle lives in /app/electron/src/main.js IPC handler (iptvFavorites per sourceId) and was not exercised here.",
+    "Hovering through Playwright correctly triggers Focusable onMouseEnter -> data-focused=true -> MutationObserver -> debounced EPG fetch; the 500-800ms wait is sufficient."
+  ],
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Mock toggleFavorite in alizceApi.js only returns [channelName] — consider having the mock keep a Set per sourceId so demo users can also experience toggling in-browser.",
+    "In Iptv.jsx keyboard handler, 'f'/'F' also toggles favorite in addition to 'y'/'Y'. The user story only mentioned Y and the on-screen legend only mentions Y. Consider removing F to avoid conflict with potential future search shortcut."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Preview URL IPTV mock exposes 4 channels (La 1 HD, La 2, DAZN F1 HD, Movistar LaLiga). Only La 1 (tvgId=la1.es) and DAZN F1 (tvgId=dazn.f1) have EPG mock data. Mock toggleFavorite is additive-only in web mode."
+}
