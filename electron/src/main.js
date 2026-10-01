@@ -1,7 +1,7 @@
 // AlizceTV — Electron main process
 // Window, IPC bridge for SMB listing, settings, CoinOps launch, MPV control.
 
-const { app, BrowserWindow, ipcMain, dialog, shell, protocol } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, shell, protocol, session, globalShortcut } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
@@ -10,6 +10,8 @@ const Store = require("electron-store");
 const SMB2 = require("@marsaud/smb2");
 const PLATFORMS = require("./platforms");
 const { TmdbClient } = require("./tmdb");
+const { installAdBlocker } = require("./adblock");
+const { loadSource } = require("./iptv");
 
 const isDev = process.argv.includes("--dev");
 
@@ -27,6 +29,12 @@ const store = new Store({
     platformModes: {},
     tmdbApiKey: "",
     lastScanAt: null,
+    buttonMap: null,  // user-configured gamepad buttons; null => defaults
+    iptvSources: [],  // array of { id, name, type: 'm3u'|'xtream', url?, host?, user?, pass? }
+    iptvCache: {},    // sourceId -> { fetchedAt, channels: [...] }
+    coinopsBoost: true, // minimize AlizceTV + set CoinOps high priority
+    youtubeDownloads: "", // output dir for yt-dlp
+    adBlock: true,    // enable Youtube/HBO cinema ad blocking
   },
 });
 
@@ -48,7 +56,9 @@ function createWindow() {
     minWidth: 1280,
     minHeight: 720,
     show: false,
-    frame: true,
+    frame: false,
+    fullscreen: true,
+    fullscreenable: true,
     backgroundColor: "#05070D",
     icon: path.join(__dirname, "..", "build", "icon.ico"),
     webPreferences: {
@@ -56,13 +66,14 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
+      backgroundThrottling: false,
     },
   });
 
   mainWindow.setMenuBarVisibility(false);
   mainWindow.once("ready-to-show", () => {
-    mainWindow.maximize();
     mainWindow.show();
+    mainWindow.setFullScreen(true);
     if (isDev) mainWindow.webContents.openDevTools({ mode: "detach" });
   });
 
@@ -71,10 +82,14 @@ function createWindow() {
     : `file://${path.join(__dirname, "..", "renderer", "index.html")}`;
   mainWindow.loadURL(indexPath);
 
-  // Open external URLs (streaming platforms) in default browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: "deny" };
+  });
+
+  // Disable Alt+F4 and other exit shortcuts — exit only via in-app button
+  mainWindow.on("close", (e) => {
+    if (!app.isQuitting) { e.preventDefault(); mainWindow.minimize(); }
   });
 }
 
@@ -96,6 +111,25 @@ app.whenReady().then(() => {
 app.on("window-all-closed", () => {
   killMpv();
   if (process.platform !== "darwin") app.quit();
+});
+
+app.on("before-quit", () => { app.isQuitting = true; });
+
+// ---------- System window actions ----------
+ipcMain.handle("system:minimize", () => { mainWindow?.minimize(); return { ok: true }; });
+ipcMain.handle("system:close", () => { app.isQuitting = true; app.quit(); return { ok: true }; });
+ipcMain.handle("system:shutdown", () => {
+  // Shutdown Windows: shutdown /s /t 5 (5 second delay to allow abort via shutdown /a)
+  if (process.platform === "win32") {
+    spawn("shutdown", ["/s", "/t", "5", "/c", "AlizceTV: apagando el equipo"], { detached: true, stdio: "ignore" }).unref();
+  }
+  return { ok: true };
+});
+ipcMain.handle("system:cancelShutdown", () => {
+  if (process.platform === "win32") {
+    spawn("shutdown", ["/a"], { detached: true, stdio: "ignore" }).unref();
+  }
+  return { ok: true };
 });
 
 // ---------- Settings ----------
@@ -186,14 +220,28 @@ ipcMain.handle("cw:upsert", (_e, entry) => {
   return trimmed;
 });
 
-// ---------- CoinOps launcher ----------
+// ---------- CoinOps launcher (with resource boost for N100) ----------
 ipcMain.handle("coinops:launch", async () => {
   const exe = store.get("coinopsPath");
   if (!exe || !fs.existsSync(exe)) {
     return { error: "Ruta a CoinOps.exe no configurada. Ve a Ajustes." };
   }
-  spawn(exe, [], { detached: true, stdio: "ignore", cwd: path.dirname(exe) }).unref();
-  return { ok: true };
+  const boost = store.get("coinopsBoost");
+  if (boost) {
+    // Minimize AlizceTV + unload MPV to free up CPU/GPU/RAM.
+    killMpv();
+    mainWindow?.minimize();
+  }
+  // Launch CoinOps with HIGH priority on Windows to give arcades the full N100.
+  if (process.platform === "win32") {
+    spawn("cmd.exe",
+      ["/c", "start", "/HIGH", "/B", "", `"${exe}"`],
+      { detached: true, stdio: "ignore", cwd: path.dirname(exe), shell: false, windowsVerbatimArguments: true }
+    ).unref();
+  } else {
+    spawn(exe, [], { detached: true, stdio: "ignore", cwd: path.dirname(exe) }).unref();
+  }
+  return { ok: true, boosted: !!boost };
 });
 
 // ---------- MPV player (embedded via IPC pipe) ----------
@@ -284,6 +332,16 @@ ipcMain.handle("mpv:play", async (_e, { smbPath, share, folder, title }) => {
     "--border=no",
     "--osd-level=1",
     "--hr-seek=yes",
+    // N100 / LG 4K TV optimisations
+    "--vo=gpu-next",
+    "--gpu-api=d3d11",
+    "--hwdec=auto-safe",
+    "--profile=gpu-hq",
+    "--video-sync=display-resample",
+    "--interpolation=yes",
+    "--tscale=oversample",
+    "--d3d11-adapter=",
+    "--audio-channels=auto-safe",
     `--title=${title || "AlizceTV"}`,
   ];
 
@@ -310,39 +368,218 @@ ipcMain.handle("mpv:play", async (_e, { smbPath, share, folder, title }) => {
 ipcMain.handle("mpv:command", async (_e, command) => mpvSend(command));
 ipcMain.handle("mpv:stop", async () => { killMpv(); return { ok: true }; });
 
+// Play ANY URL (IPTV, YouTube-dl'd streams, radio, etc.) via MPV
+ipcMain.handle("mpv:playUrl", async (_e, { url, title }) => {
+  const exe = resolveMpvPath();
+  if (!exe) return { error: "mpv.exe no encontrado. Configúralo en Ajustes." };
+  killMpv();
+  const pipeName = "\\\\.\\pipe\\alizcetv-mpv";
+  const args = [
+    url,
+    `--input-ipc-server=${pipeName}`,
+    "--fullscreen",
+    "--force-window=yes",
+    "--ontop",
+    "--border=no",
+    "--osd-level=1",
+    "--hr-seek=yes",
+    "--vo=gpu-next",
+    "--gpu-api=d3d11",
+    "--hwdec=auto-safe",
+    "--profile=gpu-hq",
+    "--cache=yes",
+    "--demuxer-max-bytes=200M",
+    "--demuxer-readahead-secs=20",
+    `--title=${title || "AlizceTV"}`,
+  ];
+  mpvProc = spawn(exe, args, { detached: false, stdio: "ignore" });
+  mpvProc.on("exit", () => { killMpv(); mainWindow?.webContents.send("mpv:event", { event: "end-file" }); mainWindow?.focus(); });
+  try {
+    await connectMpvIpc(pipeName);
+    await mpvSend(["observe_property", 1, "time-pos"]);
+    await mpvSend(["observe_property", 2, "duration"]);
+    await mpvSend(["observe_property", 3, "pause"]);
+    return { ok: true };
+  } catch (e) {
+    return { error: e.message };
+  }
+});
+
+// ---------- IPTV ----------
+function iptvId() { return `iptv-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`; }
+
+ipcMain.handle("iptv:listSources", () => store.get("iptvSources") || []);
+
+ipcMain.handle("iptv:addSource", (_e, src) => {
+  const sources = store.get("iptvSources") || [];
+  const id = iptvId();
+  const next = { id, name: src.name || "Lista sin nombre", ...src };
+  sources.push(next);
+  store.set("iptvSources", sources);
+  return next;
+});
+
+ipcMain.handle("iptv:removeSource", (_e, id) => {
+  const sources = (store.get("iptvSources") || []).filter((s) => s.id !== id);
+  store.set("iptvSources", sources);
+  const cache = store.get("iptvCache") || {};
+  delete cache[id];
+  store.set("iptvCache", cache);
+  return sources;
+});
+
+ipcMain.handle("iptv:refresh", async (_e, id) => {
+  const sources = store.get("iptvSources") || [];
+  const src = sources.find((s) => s.id === id);
+  if (!src) return { error: "Fuente no encontrada" };
+  try {
+    const channels = await loadSource(src);
+    const cache = store.get("iptvCache") || {};
+    cache[id] = { fetchedAt: Date.now(), channels };
+    store.set("iptvCache", cache);
+    return { ok: true, count: channels.length };
+  } catch (e) {
+    return { error: e.message };
+  }
+});
+
+ipcMain.handle("iptv:getChannels", (_e, id) => {
+  const cache = store.get("iptvCache") || {};
+  return cache[id]?.channels || [];
+});
+
 // Open file externally (fallback)
 ipcMain.handle("shell:open", async (_e, p) => shell.openPath(p));
 
 // ---------- Streaming platform launcher ----------
 let cinemaWindow = null;
 
-function openCinema(url, label) {
+function openCinema(url, label, options = {}) {
   if (cinemaWindow) { try { cinemaWindow.close(); } catch (_) {} cinemaWindow = null; }
+  const partition = `persist:cinema-${label.toLowerCase().replace(/\s/g, "-")}`;
+  const sess = session.fromPartition(partition);
+  if (store.get("adBlock")) installAdBlocker(sess);
+
   cinemaWindow = new BrowserWindow({
-    width: 1920,
-    height: 1080,
-    fullscreen: true,
-    frame: false,
+    width: 1920, height: 1080,
+    fullscreen: true, frame: false,
     backgroundColor: "#000000",
     title: `AlizceTV — ${label}`,
     icon: path.join(__dirname, "..", "build", "icon.ico"),
-    webPreferences: { contextIsolation: true, nodeIntegration: false },
+    webPreferences: {
+      contextIsolation: true, nodeIntegration: false,
+      partition,
+      backgroundThrottling: false,
+    },
   });
   cinemaWindow.setMenuBarVisibility(false);
   cinemaWindow.loadURL(url, { userAgent:
     "Mozilla/5.0 (SMART-TV; Linux; Tizen 6.5) AppleWebKit/537.36 (KHTML, like Gecko) 85.0.4183.93/6.5 TV Safari/537.36"
   });
-  // ESC / Backspace / Gamepad B closes cinema and returns to AlizceTV
+
   cinemaWindow.webContents.on("before-input-event", (event, input) => {
     if (input.type === "keyDown" && (input.key === "Escape" || input.key === "Backspace")) {
       try { cinemaWindow.close(); } catch (_) {}
     }
   });
-  cinemaWindow.on("closed", () => {
-    cinemaWindow = null;
-    mainWindow?.focus();
+
+  if (options.withYtDlp) {
+    cinemaWindow.webContents.on("did-finish-load", () => injectYtDlpOverlay());
+  }
+
+  cinemaWindow.on("closed", () => { cinemaWindow = null; mainWindow?.focus(); });
+}
+
+function injectYtDlpOverlay() {
+  if (!cinemaWindow) return;
+  const js = `
+    (function(){
+      if (document.getElementById('alizce-ytdlp-overlay')) return;
+      const box = document.createElement('div');
+      box.id = 'alizce-ytdlp-overlay';
+      box.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:2147483647;display:flex;flex-direction:column;gap:8px;align-items:flex-end;font-family:system-ui,sans-serif;';
+      box.innerHTML = '<button id="alizce-dl-btn" style="padding:10px 16px;background:rgba(10,12,20,0.9);color:#67e8f9;border:1px solid rgba(103,232,249,0.5);border-radius:999px;cursor:pointer;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;backdrop-filter:blur(12px);box-shadow:0 10px 30px rgba(0,0,0,0.6);">&#8595; Descargar video</button>' +
+      '<div id="alizce-dl-menu" style="display:none;flex-direction:column;background:rgba(10,12,20,0.95);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:6px;backdrop-filter:blur(12px);">' +
+      '<a data-q="best" href="#" style="padding:8px 14px;color:#fff;text-decoration:none;font-size:12px;">Mejor calidad</a>' +
+      '<a data-q="1080" href="#" style="padding:8px 14px;color:#fff;text-decoration:none;font-size:12px;">1080p MP4</a>' +
+      '<a data-q="720" href="#" style="padding:8px 14px;color:#fff;text-decoration:none;font-size:12px;">720p MP4</a>' +
+      '<a data-q="audio" href="#" style="padding:8px 14px;color:#fff;text-decoration:none;font-size:12px;">Solo audio MP3</a>' +
+      '</div><div id="alizce-dl-status" style="font-size:11px;color:#94a3b8;max-width:360px;text-align:right;"></div>';
+      document.body.appendChild(box);
+      const btn = document.getElementById('alizce-dl-btn');
+      const menu = document.getElementById('alizce-dl-menu');
+      btn.onclick = () => { menu.style.display = menu.style.display === 'none' ? 'flex' : 'none'; };
+      menu.querySelectorAll('a').forEach(function(b){
+        b.onclick = function(ev){
+          ev.preventDefault();
+          const q = b.dataset.q;
+          menu.style.display = 'none';
+          const payload = encodeURIComponent(JSON.stringify({ url: location.href, quality: q }));
+          window.open('alizce-dl://' + payload, '_blank');
+        };
+      });
+    })();
+  `;
+  cinemaWindow.webContents.executeJavaScript(js).catch(() => {});
+}
+
+function resolveYtDlpPath() {
+  const bundled = path.join(process.resourcesPath || path.join(__dirname, ".."), "ytdlp", "yt-dlp.exe");
+  if (fs.existsSync(bundled)) return bundled;
+  const bundledAlt = path.join(__dirname, "..", "vendor", "ytdlp", "yt-dlp.exe");
+  if (fs.existsSync(bundledAlt)) return bundledAlt;
+  return null;
+}
+
+function startYtDlp(url, quality) {
+  const exe = resolveYtDlpPath();
+  if (!exe) {
+    cinemaWindow?.webContents.executeJavaScript(
+      "var s=document.getElementById('alizce-dl-status'); if(s) s.textContent='yt-dlp.exe no encontrado. Copialo a electron\\\\vendor\\\\ytdlp\\\\';"
+    ).catch(() => {});
+    return;
+  }
+  const outDir = store.get("youtubeDownloads") || path.join(app.getPath("videos"), "AlizceTV");
+  fs.mkdirSync(outDir, { recursive: true });
+  const argMap = {
+    best:  ["-f", "bv*+ba/b", "--merge-output-format", "mp4"],
+    "1080":["-f", "bv*[height<=1080]+ba/b[height<=1080]", "--merge-output-format", "mp4"],
+    "720": ["-f", "bv*[height<=720]+ba/b[height<=720]", "--merge-output-format", "mp4"],
+    audio: ["-x", "--audio-format", "mp3"],
+  };
+  const args = [
+    ...(argMap[quality] || argMap.best),
+    "-o", path.join(outDir, "%(title)s.%(ext)s"),
+    url,
+  ];
+  const proc = spawn(exe, args, { stdio: ["ignore", "pipe", "pipe"] });
+  const updateStatus = (text) => {
+    const safe = text.toString().replace(/[\n'`\\]/g, " ").slice(-120);
+    cinemaWindow?.webContents.executeJavaScript(
+      `(function(){ var s=document.getElementById('alizce-dl-status'); if(s) s.textContent='${safe}'; })();`
+    ).catch(() => {});
+  };
+  proc.stdout?.on("data", updateStatus);
+  proc.stderr?.on("data", updateStatus);
+  proc.on("exit", (code) => {
+    updateStatus(code === 0 ? "✓ Descarga completada en " + outDir : "✗ Error (código " + code + ")");
   });
 }
+
+// Register alizce-dl:// protocol handler for the yt-dlp overlay
+app.on("web-contents-created", (_e, contents) => {
+  contents.setWindowOpenHandler((details) => {
+    const u = details.url;
+    if (u.startsWith("alizce-dl://")) {
+      try {
+        const payload = JSON.parse(decodeURIComponent(u.replace(/^alizce-dl:\/\//, "")));
+        startYtDlp(payload.url, payload.quality);
+      } catch (_) {}
+      return { action: "deny" };
+    }
+    return { action: "allow" };
+  });
+});
 
 ipcMain.handle("platform:launch", async (_e, id) => {
   const def = PLATFORMS[id];
@@ -364,7 +601,7 @@ ipcMain.handle("platform:launch", async (_e, id) => {
       return { ok: true, mode };
     }
     // cinema
-    openCinema(def.web, def.label);
+    openCinema(def.web, def.label, { withYtDlp: id === "youtube" });
     return { ok: true, mode };
   } catch (e) {
     return { error: e.message };

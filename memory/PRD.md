@@ -71,6 +71,21 @@ TV box app para Windows 11 Home llamada **AlizceTV**: acceso unificado a platafo
 - **Fallback gracioso**: cuando `window.alizce` no existe (navegador normal), el frontend usa mock data y muestra banner "modo demo".
 - README con instrucciones de build paso a paso para Windows.
 
+### 2026-01-01 — Fase 4: TV-ready completo (IPTV + Pad configurable + N100 boost + Logo v2)
+- **Barra superior eliminada**. Reemplazada por `FloatingControls` arriba a la derecha: reloj con segundos + icono de ajustes que despliega menú con `Ajustes / Ver escritorio / Cerrar AlizceTV / Apagar PC` (con confirmación doble).
+- **Ventana Electron fullscreen sin bordes** (`frame: false, fullscreen: true`), `backgroundThrottling: false`, Alt+F4 interceptado para minimizar.
+- **Volver nunca sale al escritorio**: en Home el botón Volver no hace nada; en el resto vuelve a Home.
+- **Teclado nativo en inputs**: focus engine detecta INPUT/TEXTAREA y se desactiva, permitiendo espacio/retroceso/flechas. Esc hace blur y vuelve a nav TV.
+- **Reproductor**: botón de cerrar visible eliminado. Click/Espacio/A pausan. Volver (B/Esc) sale al Home. OSD auto-hide 3.5s.
+- **Pad configurable** (`ButtonMappingSection`): 6 acciones reasignables (Aceptar/Volver/Menú/Play-Pausa/Minimizar/Apagar). "Asignar" captura la próxima pulsación del gamepad. La leyenda flotante abajo refleja el botón real.
+- **IPTV completo** (`electron/src/iptv.js` + `pages/Iptv.jsx`): m3u/m3u8 y Xtream Codes API. Filtro por grupo en vivo. Reproduce con `mpv:playUrl` con cache 200MB.
+- **YouTube Cine mejorado**: adblocker nativo (`electron/src/adblock.js`, 20+ dominios bloqueados vía `session.webRequest`) + overlay flotante "Descargar vídeo" con 4 calidades que invoca yt-dlp.exe.
+- **CoinOps Boost N100**: al lanzar CoinOps se mata MPV, se minimiza AlizceTV y se lanza el .exe con prioridad `HIGH` (`cmd /c start /HIGH`).
+- **MPV optimizado N100 + LG 4K**: `--vo=gpu-next --gpu-api=d3d11 --hwdec=auto-safe --profile=gpu-hq --video-sync=display-resample --interpolation=yes --tscale=oversample`.
+- **Build script** amplía descarga de yt-dlp.exe automáticamente vía GitHub API a `electron/vendor/ytdlp/yt-dlp.exe` + extraResources en electron-builder.
+- **Logo rediseñado** v2 más limpio: "A" con gradiente cian→índigo→violeta, aura glow, línea señal, badge TV minimal. `icon.ico` multi-resolución regenerado.
+- **TopBar.jsx eliminado**. HashRouter con nueva ruta `/iptv`.
+
 ## How to build AlizceTV.exe
 1. En Windows, con Node 18+ y Yarn:
    ```powershell

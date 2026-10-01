@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, FolderSearch, Save, HardDrive, Film, Gamepad2, Check, Tv, Key, RefreshCw, Loader2, ExternalLink } from "lucide-react";
-import TopBar from "../components/TopBar";
+import FloatingControls from "../components/FloatingControls";
 import Focusable from "../components/Focusable";
 import GamepadLegend from "../components/GamepadLegend";
+import ButtonMappingSection from "../components/ButtonMappingSection";
 import { useFocusEngine } from "../hooks/useFocusEngine";
-import { settingsService, platformService, tmdbService, isElectron } from "../services/alizceApi";
+import { settingsService, platformService, tmdbService, isElectron, systemService } from "../services/alizceApi";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -18,7 +19,8 @@ export default function Settings() {
 
   const { focusFirst } = useFocusEngine({
     enabled: true,
-    onBack: () => navigate(-1),
+    onBack: () => navigate("/"),
+    onMinimize: () => systemService.minimize(),
   });
 
   useEffect(() => {
@@ -77,13 +79,13 @@ export default function Settings() {
 
   return (
     <div data-testid="settings-screen">
-      <TopBar />
-      <main className="relative px-10 lg:px-14 pb-24 max-w-5xl">
+      <FloatingControls />
+      <main className="relative px-10 lg:px-14 pt-10 pb-24 max-w-5xl">
         <div className="flex items-center gap-4 mb-10">
           <Focusable
             id="settings-back"
             testId="btn-settings-back"
-            onSelect={() => navigate(-1)}
+            onSelect={() => navigate("/")}
             className="w-11 h-11 rounded-xl glass flex items-center justify-center text-white"
           >
             <ArrowLeft size={18} />
@@ -142,6 +144,9 @@ export default function Settings() {
             </div>
           </div>
         </section>
+
+        {/* Button mapping */}
+        <ButtonMappingSection />
 
         {/* TMDB catalog */}
         <section className="mb-10">
@@ -312,9 +317,9 @@ export default function Settings() {
         {/* MPV */}
         <section className="mb-10">
           <h3 className="font-title text-xl text-white tracking-widest uppercase mb-5 flex items-center gap-3">
-            <Film size={20} className="text-cyan-400" /> Reproductor MPV
+            <Film size={20} className="text-cyan-400" /> Reproductor MPV + Rendimiento (Chuwi N100)
           </h3>
-          <div className="glass rounded-2xl p-6 space-y-4">
+          <div className="glass rounded-2xl p-6 space-y-5">
             <Field
               label="Ruta de mpv.exe (opcional)"
               hint="Si lo dejas vacío, se usará el mpv.exe incluido con AlizceTV"
@@ -331,6 +336,48 @@ export default function Settings() {
                   id="pick-mpv"
                   testId="btn-pick-mpv"
                   onSelect={() => pickFile("mpvPath", [{ name: "Ejecutables", extensions: ["exe"] }], "Selecciona mpv.exe")}
+                  className="px-5 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 flex items-center gap-2 font-mono tracking-widest uppercase text-sm"
+                >
+                  <FolderSearch size={16} /> Examinar
+                </Focusable>
+              </div>
+            </Field>
+            <ToggleRow
+              label="CoinOps a toda potencia"
+              hint="Al lanzar CoinOps: minimiza AlizceTV, libera memoria y lanza el emulador con prioridad HIGH en Windows. Recomendado para Chuwi N100."
+              checked={!!settings.coinopsBoost}
+              onToggle={(v) => update({ coinopsBoost: v })}
+              testId="toggle-coinops-boost"
+            />
+            <ToggleRow
+              label="Bloqueador de anuncios en Modo Cine"
+              hint="Filtra dominios de anuncios y trackers en YouTube / HBO / Filmin. Más rápido en N100 que una extensión."
+              checked={!!settings.adBlock}
+              onToggle={(v) => update({ adBlock: v })}
+              testId="toggle-adblock"
+            />
+            <Field
+              label="Carpeta de descargas de YouTube"
+              hint="Vacío = Vídeos\\AlizceTV\\ por defecto. Botón 'Descargar vídeo' aparece sobre la ventana de YouTube."
+            >
+              <div className="flex gap-3">
+                <input
+                  data-testid="input-ytdlp-path"
+                  readOnly
+                  placeholder="(por defecto: Vídeos\\AlizceTV)"
+                  className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm tracking-wider"
+                  value={settings.youtubeDownloads || ""}
+                />
+                <Focusable
+                  id="pick-ytdir"
+                  testId="btn-pick-ytdir"
+                  onSelect={async () => {
+                    const file = await settingsService.pickFile({ title: "Carpeta de descargas", filters: [{ name: "Cualquier archivo", extensions: ["*"] }] });
+                    if (file) {
+                      const dir = file.replace(/[\\/][^\\/]+$/, "");
+                      update({ youtubeDownloads: dir });
+                    }
+                  }}
                   className="px-5 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 flex items-center gap-2 font-mono tracking-widest uppercase text-sm"
                 >
                   <FolderSearch size={16} /> Examinar
@@ -369,6 +416,27 @@ function Field({ label, hint, children }) {
       {hint && (
         <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">{hint}</p>
       )}
+    </div>
+  );
+}
+
+function ToggleRow({ label, hint, checked, onToggle, testId }) {
+  return (
+    <div className="flex items-start justify-between gap-6" data-testid={testId}>
+      <div className="min-w-0 flex-1">
+        <div className="font-title text-base text-white uppercase tracking-wider">{label}</div>
+        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{hint}</p>
+      </div>
+      <Focusable
+        id={`${testId}-switch`}
+        testId={`${testId}-switch`}
+        onSelect={() => onToggle(!checked)}
+        className={`shrink-0 w-14 h-8 rounded-full relative transition-colors ${checked ? "bg-cyan-400" : "bg-slate-700"}`}
+      >
+        <span
+          className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all ${checked ? "left-7" : "left-1"}`}
+        />
+      </Focusable>
     </div>
   );
 }

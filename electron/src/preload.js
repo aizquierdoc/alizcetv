@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld("alizce", {
 
   mpv: {
     play: (opts) => ipcRenderer.invoke("mpv:play", opts),
+    playUrl: (opts) => ipcRenderer.invoke("mpv:playUrl", opts),
     command: (cmd) => ipcRenderer.invoke("mpv:command", cmd),
     stop: () => ipcRenderer.invoke("mpv:stop"),
     onEvent: (cb) => {
@@ -37,6 +38,21 @@ contextBridge.exposeInMainWorld("alizce", {
 
   shell: {
     open: (path) => ipcRenderer.invoke("shell:open", path),
+  },
+
+  system: {
+    minimize: () => ipcRenderer.invoke("system:minimize"),
+    close: () => ipcRenderer.invoke("system:close"),
+    shutdown: () => ipcRenderer.invoke("system:shutdown"),
+    cancelShutdown: () => ipcRenderer.invoke("system:cancelShutdown"),
+  },
+
+  iptv: {
+    listSources: () => ipcRenderer.invoke("iptv:listSources"),
+    addSource: (src) => ipcRenderer.invoke("iptv:addSource", src),
+    removeSource: (id) => ipcRenderer.invoke("iptv:removeSource", id),
+    refresh: (id) => ipcRenderer.invoke("iptv:refresh", id),
+    getChannels: (id) => ipcRenderer.invoke("iptv:getChannels", id),
   },
 
   platform: {

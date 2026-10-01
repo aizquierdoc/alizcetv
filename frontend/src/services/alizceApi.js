@@ -1,6 +1,4 @@
-// Service layer: wraps window.alizce (Electron) with graceful mock fallback.
-// Works both inside AlizceTV.exe and in the web preview.
-
+// AlizceTV service layer — abstracts Electron APIs with mock fallback.
 import {
   continueWatching as mockCW,
   folderContents,
@@ -20,6 +18,9 @@ export const settingsService = {
       smbShares: ["Peliculas", "Series", "Descargas"],
       coinopsPath: "",
       mpvPath: "",
+      buttonMap: null,
+      coinopsBoost: true,
+      adBlock: true,
     };
   },
   async set(patch) {
@@ -31,6 +32,14 @@ export const settingsService = {
     alert("Selección de archivos solo disponible en la app de Windows.");
     return null;
   },
+};
+
+// ----- System window controls -----
+export const systemService = {
+  async minimize() { if (api) return api.system.minimize(); },
+  async close()    { if (api) return api.system.close(); window.close(); },
+  async shutdown() { if (api) return api.system.shutdown(); alert("Apagado solo disponible en la app Windows."); },
+  async cancelShutdown() { if (api) return api.system.cancelShutdown(); },
 };
 
 // ----- SMB / Network -----
@@ -45,33 +54,22 @@ export const smbService = {
         path: `\\\\${s.smbHost}\\${share}`,
       }));
     }
-    // Mock
     return mockNetworkFolders.map((f) => ({
-      id: f.id,
-      name: f.name,
-      share: f.name,
-      path: f.path,
-      cover: f.cover,
-      count: f.count,
+      id: f.id, name: f.name, share: f.name, path: f.path, cover: f.cover, count: f.count,
     }));
   },
-
   async listFolder(share, folder = "") {
     if (api) {
       const res = await api.smb.listFolder(share, folder);
       if (res.error) return { error: res.error, items: [] };
       return { items: res.items };
     }
-    // Mock: match share name to legacy folder id
     const id =
       share.toLowerCase().includes("pel") ? "net-peliculas" :
       share.toLowerCase().includes("ser") ? "net-series" :
       "net-descargas";
     const items = (folderContents[id] || []).map((it) => ({
-      name: `${it.title}.mkv`,
-      path: `${it.title}.mkv`,
-      isVideo: true,
-      mockMeta: it,
+      name: `${it.title}.mkv`, path: `${it.title}.mkv`, isVideo: true, mockMeta: it,
     }));
     return { items };
   },
@@ -79,74 +77,39 @@ export const smbService = {
 
 // ----- Continue Watching -----
 export const cwService = {
-  async get() {
-    if (api) {
-      const list = await api.cw.get();
-      return list.slice(0, 3);
-    }
-    return mockCW;
-  },
-  async save(entry) {
-    if (api) return api.cw.upsert(entry);
-    return [entry];
-  },
+  async get() { if (api) return (await api.cw.get()).slice(0, 3); return mockCW; },
+  async save(entry) { if (api) return api.cw.upsert(entry); return [entry]; },
 };
 
 // ----- Streaming platforms -----
 export const platformService = {
   async list() {
     if (api) return api.platform.list();
-    // Mock list (same as streamingPlatforms)
     const { streamingPlatforms } = await import("../data/mockData");
     return streamingPlatforms.map((p) => ({
-      id: p.id,
-      label: p.label,
-      web: p.url,
+      id: p.id, label: p.label, web: p.url,
       hasUwp: !["hbo", "youtube", "filmin"].includes(p.id),
       mode: ["hbo", "youtube", "filmin"].includes(p.id) ? "cinema" : "uwp",
     }));
   },
   async launch(id) {
     if (api) return api.platform.launch(id);
-    // Web demo fallback: open the official web URL in a new tab.
     const { streamingPlatforms } = await import("../data/mockData");
     const p = streamingPlatforms.find((x) => x.id === id);
     if (p) window.open(p.url, "_blank", "noopener");
     return { ok: true, mode: "external" };
   },
-  async setMode(id, mode) {
-    if (api) return api.platform.setMode(id, mode);
-    return { id, mode };
-  },
+  async setMode(id, mode) { if (api) return api.platform.setMode(id, mode); return { id, mode }; },
 };
 
 // ----- TMDB -----
 export const tmdbService = {
-  async status() {
-    if (api) return api.tmdb.status();
-    return { hasKey: false, lastScanAt: null, running: false };
-  },
-  async setApiKey(key) {
-    if (api) return api.tmdb.setApiKey(key);
-    return { ok: true };
-  },
-  async scan() {
-    if (api) return api.tmdb.scan();
-    alert("El escaneo TMDB solo funciona en la app de Windows.");
-    return { error: "no-electron" };
-  },
-  async lookup(filename) {
-    if (api) return api.tmdb.lookup(filename);
-    return null;
-  },
-  async getCached(filename) {
-    if (api) return api.tmdb.getCached(filename);
-    return null;
-  },
-  onProgress(cb) {
-    if (api) return api.tmdb.onProgress(cb);
-    return () => {};
-  },
+  async status() { if (api) return api.tmdb.status(); return { hasKey: false, lastScanAt: null, running: false }; },
+  async setApiKey(key) { if (api) return api.tmdb.setApiKey(key); return { ok: true }; },
+  async scan() { if (api) return api.tmdb.scan(); return { error: "no-electron" }; },
+  async lookup(f) { if (api) return api.tmdb.lookup(f); return null; },
+  async getCached(f) { if (api) return api.tmdb.getCached(f); return null; },
+  onProgress(cb) { if (api) return api.tmdb.onProgress(cb); return () => {}; },
 };
 
 // ----- CoinOps -----
@@ -154,10 +117,7 @@ export const coinopsService = {
   async launch() {
     if (api) {
       const res = await api.coinops.launch();
-      if (res.error) {
-        alert(res.error);
-        return false;
-      }
+      if (res.error) { alert(res.error); return false; }
       return true;
     }
     alert("Lanzamiento de CoinOps solo disponible en la app de Windows.");
@@ -165,23 +125,35 @@ export const coinopsService = {
   },
 };
 
-// ----- MPV player -----
+// ----- IPTV -----
+export const iptvService = {
+  async listSources() {
+    if (api) return api.iptv.listSources();
+    return [
+      { id: "demo-m3u", name: "Lista Demo (ejemplo)", type: "m3u", url: "https://example.com/demo.m3u" },
+    ];
+  },
+  async addSource(src) { if (api) return api.iptv.addSource(src); return { id: "demo", ...src }; },
+  async removeSource(id) { if (api) return api.iptv.removeSource(id); return []; },
+  async refresh(id) { if (api) return api.iptv.refresh(id); return { ok: true, count: 0 }; },
+  async getChannels(id) {
+    if (api) return api.iptv.getChannels(id);
+    return [
+      { name: "La 1 HD", group: "España · TDT", logo: null, url: "demo://la1" },
+      { name: "La 2", group: "España · TDT", logo: null, url: "demo://la2" },
+      { name: "DAZN F1 HD", group: "Deportes", logo: null, url: "demo://dazn-f1" },
+      { name: "Movistar LaLiga", group: "Deportes", logo: null, url: "demo://movistar-liga" },
+    ];
+  },
+};
+
+// ----- MPV -----
 export const mpvService = {
-  async play(opts) {
-    if (api) return api.mpv.play(opts);
-    return { error: "no-electron" };
-  },
-  async stop() {
-    if (api) return api.mpv.stop();
-  },
-  async command(cmd) {
-    if (api) return api.mpv.command(cmd);
-  },
-  onEvent(cb) {
-    if (api) return api.mpv.onEvent(cb);
-    return () => {};
-  },
-  // Convenience
+  async play(opts) { if (api) return api.mpv.play(opts); return { error: "no-electron" }; },
+  async playUrl(opts) { if (api) return api.mpv.playUrl(opts); return { error: "no-electron" }; },
+  async stop() { if (api) return api.mpv.stop(); },
+  async command(cmd) { if (api) return api.mpv.command(cmd); },
+  onEvent(cb) { if (api) return api.mpv.onEvent(cb); return () => {}; },
   async setPause(pause) { return this.command(["set_property", "pause", pause]); },
   async seek(seconds) { return this.command(["seek", seconds, "relative"]); },
   async setAid(id) { return this.command(["set_property", "aid", id]); },
@@ -192,5 +164,4 @@ export const mpvService = {
   },
 };
 
-// Expose the mock demo video for web preview fallback
 export const DEMO_VIDEO_URL = DEMO_VIDEO;

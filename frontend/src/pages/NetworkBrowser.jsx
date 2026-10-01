@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ArrowLeft, Play, Film, Folder, AlertTriangle, Loader2 } from "lucide-react";
-import TopBar from "../components/TopBar";
+import FloatingControls from "../components/FloatingControls";
 import Focusable from "../components/Focusable";
 import GamepadLegend from "../components/GamepadLegend";
 import { useFocusEngine } from "../hooks/useFocusEngine";
-import { smbService, isElectron } from "../services/alizceApi";
+import { smbService, isElectron, systemService } from "../services/alizceApi";
 
 export default function NetworkBrowser() {
   const { folderId } = useParams();
@@ -29,9 +29,11 @@ export default function NetworkBrowser() {
         const parent = currentPath.split("\\").slice(0, -1).join("\\");
         setCurrentPath(parent);
       } else {
-        navigate(-1);
+        navigate("/");
       }
     },
+    onMenu: () => navigate("/settings"),
+    onMinimize: () => systemService.minimize(),
   });
 
   useEffect(() => {
@@ -71,13 +73,13 @@ export default function NetworkBrowser() {
 
   return (
     <div data-testid="folder-screen">
-      <TopBar />
-      <main className="relative px-10 lg:px-14 pb-24">
+      <FloatingControls />
+      <main className="relative px-10 lg:px-14 pt-10 pb-24">
         <div className="flex items-center gap-4 mb-6">
           <Focusable
             id="back-btn"
             testId="btn-back"
-            onSelect={() => (currentPath ? setCurrentPath(currentPath.split("\\").slice(0, -1).join("\\")) : navigate(-1))}
+            onSelect={() => (currentPath ? setCurrentPath(currentPath.split("\\").slice(0, -1).join("\\")) : navigate("/"))}
             className="w-11 h-11 rounded-xl glass flex items-center justify-center text-white"
           >
             <ArrowLeft size={18} />

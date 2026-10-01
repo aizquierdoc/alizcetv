@@ -160,6 +160,34 @@ if (Test-Path $MpvExe) {
 }
 
 # -----------------------------------------------------------------------------
+# 3bis. Descargar yt-dlp.exe (para la descarga de videos de YouTube)
+# -----------------------------------------------------------------------------
+Section "3bis/6  Comprobando yt-dlp.exe"
+$YtDlpDir = Join-Path $ElectronDir "vendor\ytdlp"
+$YtDlpExe = Join-Path $YtDlpDir "yt-dlp.exe"
+
+if (Test-Path $YtDlpExe) {
+    Write-Host "[OK] yt-dlp.exe ya existe ($YtDlpExe)"
+} else {
+    Write-Host "Descargando yt-dlp.exe (ultima release de GitHub)..."
+    New-Item -ItemType Directory -Path $YtDlpDir -Force | Out-Null
+    try {
+        $YtApi = "https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest"
+        $headers = @{ "User-Agent" = "AlizceTV-Build" }
+        $release = Invoke-RestMethod -Uri $YtApi -Headers $headers -ErrorAction Stop
+        $asset = $release.assets | Where-Object { $_.name -eq "yt-dlp.exe" } | Select-Object -First 1
+        if (-not $asset) { throw "No se encontro yt-dlp.exe en el release." }
+        Invoke-WebRequest -Uri $asset.browser_download_url -Headers $headers -OutFile $YtDlpExe -UseBasicParsing
+        $sizeMB = [math]::Round((Get-Item $YtDlpExe).Length / 1MB, 1)
+        Write-Host "[OK] yt-dlp.exe descargado ($sizeMB MB)"
+    } catch {
+        Write-Host "[AVISO] Fallo la descarga automatica de yt-dlp: $($_.Exception.Message)" -ForegroundColor Yellow
+        Write-Host "Descarga manualmente: https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -ForegroundColor Yellow
+        Write-Host "Y copialo a: $YtDlpExe" -ForegroundColor Yellow
+    }
+}
+
+# -----------------------------------------------------------------------------
 # 4. Instalar dependencias
 # -----------------------------------------------------------------------------
 Section "4/6  Instalando dependencias React (yarn install)"

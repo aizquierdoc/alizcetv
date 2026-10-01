@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  Play, Pause, RotateCcw, RotateCw, ArrowLeft, Subtitles,
+  Play, Pause, RotateCcw, RotateCw, Subtitles,
   AudioLines, Maximize2, Volume2, Film,
 } from "lucide-react";
 import Focusable from "../components/Focusable";
@@ -46,10 +46,23 @@ export default function VideoPlayer() {
   const [subTracks, setSubTracks] = useState(item.subs || []);
   const [openMenu, setOpenMenu] = useState(null);
   const hideTimer = useRef(null);
+  const playingRef = useRef(playing);
+  useEffect(() => { playingRef.current = playing; }, [playing]);
 
   const closeAll = () => {
     if (useMpv) mpvService.stop();
-    navigate(-1);
+    navigate("/");
+  };
+
+  const togglePlay = () => {
+    if (useMpv) {
+      mpvService.setPause(playingRef.current);
+      setPlaying((p) => !p);
+      return;
+    }
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.paused) { v.play(); setPlaying(true); } else { v.pause(); setPlaying(false); }
   };
 
   const { focusFirst } = useFocusEngine({
@@ -58,6 +71,7 @@ export default function VideoPlayer() {
       if (openMenu) setOpenMenu(null);
       else closeAll();
     },
+    onPlayPause: togglePlay,
   });
 
   useEffect(() => {
@@ -65,14 +79,10 @@ export default function VideoPlayer() {
     return () => clearTimeout(t);
   }, [focusFirst]);
 
-  // Launch MPV when in Electron, with real file
+  // MPV lifecycle
   useEffect(() => {
     if (!useMpv) return;
-    mpvService.play({
-      share: item.share,
-      folder: item.folder,
-      title: item.title,
-    });
+    mpvService.play({ share: item.share, folder: item.folder, title: item.title });
     const off = mpvService.onEvent((msg) => {
       if (msg.event === "property-change") {
         if (msg.name === "time-pos") setCurrent(msg.data || 0);
@@ -96,7 +106,6 @@ export default function VideoPlayer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Keep progress bar in sync for MPV
   useEffect(() => {
     if (!duration) return setProgress(0);
     setProgress((current / duration) * 100);
@@ -107,28 +116,16 @@ export default function VideoPlayer() {
     const resetHide = () => {
       setShowOSD(true);
       clearTimeout(hideTimer.current);
-      hideTimer.current = setTimeout(() => setShowOSD(false), 4500);
+      hideTimer.current = setTimeout(() => setShowOSD(false), 3500);
     };
     resetHide();
-    const events = ["mousemove", "keydown", "mousedown"];
+    const events = ["mousemove"];
     events.forEach((e) => window.addEventListener(e, resetHide));
     return () => {
       events.forEach((e) => window.removeEventListener(e, resetHide));
       clearTimeout(hideTimer.current);
     };
   }, []);
-
-  const togglePlay = () => {
-    if (useMpv) {
-      mpvService.setPause(playing);
-      setPlaying((p) => !p);
-      return;
-    }
-    const v = videoRef.current;
-    if (!v) return;
-    if (v.paused) { v.play(); setPlaying(true); }
-    else { v.pause(); setPlaying(false); }
-  };
 
   const seek = (delta) => {
     if (useMpv) { mpvService.seek(delta); return; }
@@ -144,14 +141,9 @@ export default function VideoPlayer() {
     setDuration(v.duration || 0);
   };
 
-  const changeAspect = (a) => {
-    setAspect(a);
-    if (useMpv) mpvService.setAspect(a);
-    setOpenMenu(null);
-  };
+  const changeAspect = (a) => { setAspect(a); if (useMpv) mpvService.setAspect(a); setOpenMenu(null); };
   const changeSub = (idx, label) => {
-    setSubTrack(label);
-    setSubsOn(label !== "__off__");
+    setSubTrack(label); setSubsOn(label !== "__off__");
     if (useMpv) mpvService.setSid(label === "__off__" ? "no" : idx + 1);
     setOpenMenu(null);
   };
@@ -165,8 +157,15 @@ export default function VideoPlayer() {
   const hasAudio = audioTracks.length > 0;
   const hasSubs = subTracks.length > 0;
 
+  // Clicking anywhere on the video area (left click, not on OSD controls) pauses
+  const handleStageClick = (e) => {
+    // Only react if click target is the stage itself or video, not an OSD control
+    if (e.target.closest("[data-osd-ctrl]")) return;
+    togglePlay();
+  };
+
   return (
-    <div className="fixed inset-0 bg-black z-50 overflow-hidden" data-testid="player-screen">
+    <div className="fixed inset-0 bg-black z-50 overflow-hidden" data-testid="player-screen" onClick={handleStageClick}>
       {!useMpv && (
         <video
           ref={videoRef}
@@ -181,14 +180,14 @@ export default function VideoPlayer() {
       )}
 
       {useMpv && (
-        <div className="absolute inset-0 flex items-center justify-center text-slate-400">
+        <div className="absolute inset-0 flex items-center justify-center text-slate-400 pointer-events-none">
           <div className="text-center">
             <Film size={64} className="mx-auto text-cyan-400 mb-4 animate-pulse" />
             <div className="font-title text-2xl text-white uppercase tracking-widest">
               Reproduciendo con MPV
             </div>
             <div className="text-xs font-mono tracking-widest mt-2">
-              MPV se muestra en primer plano. Los controles de abajo lo manejan por IPC.
+              MPV se muestra en primer plano. Pulsa el botón "Volver" del mando para salir.
             </div>
           </div>
         </div>
@@ -196,16 +195,8 @@ export default function VideoPlayer() {
 
       {/* OSD overlay */}
       <div className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${showOSD ? "opacity-100" : "opacity-0"}`}>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/90" />
-        <div className="pointer-events-auto absolute top-0 inset-x-0 p-8 flex items-start justify-between">
-          <Focusable
-            id="player-back"
-            testId="btn-player-back"
-            onSelect={closeAll}
-            className="w-12 h-12 rounded-full glass-strong flex items-center justify-center text-white"
-          >
-            <ArrowLeft size={20} />
-          </Focusable>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/90" />
+        <div className="pointer-events-auto absolute top-0 inset-x-0 p-8 flex items-start justify-end" data-osd-ctrl>
           <div className="text-right">
             <h2 className="font-title text-2xl lg:text-3xl text-white uppercase tracking-widest">
               {item.title}
@@ -213,17 +204,18 @@ export default function VideoPlayer() {
             <p className="text-xs font-mono tracking-widest text-slate-300 mt-1">
               {item.subtitle}
             </p>
+            <p className="text-[10px] font-mono tracking-widest text-slate-500 mt-1">
+              Pulsa VOLVER del mando para salir
+            </p>
           </div>
         </div>
 
-        <div className="pointer-events-auto absolute inset-x-0 bottom-0 p-8">
+        <div className="pointer-events-auto absolute inset-x-0 bottom-0 p-8" data-osd-ctrl>
           <div className="mb-4 flex items-center gap-4 font-mono text-xs text-slate-300 tracking-widest">
             <span>{fmt(current)}</span>
             <div className="flex-1 h-1.5 rounded-full bg-white/15 overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-cyan-300 to-indigo-400 shadow-[0_0_12px_rgba(56,189,248,0.8)]"
-                style={{ width: `${progress}%` }}
-              />
+              <div className="h-full bg-gradient-to-r from-cyan-300 to-indigo-400 shadow-[0_0_12px_rgba(56,189,248,0.8)]"
+                style={{ width: `${progress}%` }}/>
             </div>
             <span>{fmt(duration)}</span>
           </div>
@@ -283,29 +275,24 @@ export default function VideoPlayer() {
               ))}
             </div>
           )}
-
           {openMenu === "subs" && hasSubs && (
             <div className="mt-4 flex justify-center gap-2 flex-wrap" data-testid="menu-subs">
-              <Focusable id="sub-off" testId="opt-sub-off"
-                onSelect={() => changeSub(-1, "__off__")}
+              <Focusable id="sub-off" testId="opt-sub-off" onSelect={() => changeSub(-1, "__off__")}
                 className={`px-4 py-2 rounded-full text-xs font-mono tracking-widest uppercase ${!subsOn ? "bg-cyan-400 text-black" : "glass-strong text-white"}`}>
                 Desactivado
               </Focusable>
               {subTracks.map((s, i) => (
-                <Focusable key={s + i} id={`sub-${i}`} testId={`opt-sub-${i}`}
-                  onSelect={() => changeSub(i, s)}
+                <Focusable key={s + i} id={`sub-${i}`} testId={`opt-sub-${i}`} onSelect={() => changeSub(i, s)}
                   className={`px-4 py-2 rounded-full text-xs font-mono tracking-widest uppercase ${subsOn && subTrack === s ? "bg-cyan-400 text-black" : "glass-strong text-white"}`}>
                   {s}
                 </Focusable>
               ))}
             </div>
           )}
-
           {openMenu === "audio" && hasAudio && (
             <div className="mt-4 flex justify-center gap-2 flex-wrap" data-testid="menu-audio">
               {audioTracks.map((a, i) => (
-                <Focusable key={a + i} id={`audio-${i}`} testId={`opt-audio-${i}`}
-                  onSelect={() => changeAudio(i, a)}
+                <Focusable key={a + i} id={`audio-${i}`} testId={`opt-audio-${i}`} onSelect={() => changeAudio(i, a)}
                   className={`px-4 py-2 rounded-full text-xs font-mono tracking-widest uppercase flex items-center gap-2 ${audioTrack === a ? "bg-cyan-400 text-black" : "glass-strong text-white"}`}>
                   <Volume2 size={14} /> {a}
                 </Focusable>

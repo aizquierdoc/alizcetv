@@ -7,6 +7,7 @@ import NetworkBrowser from "./pages/NetworkBrowser";
 import VideoPlayer from "./pages/VideoPlayer";
 import Arcade from "./pages/Arcade";
 import Settings from "./pages/Settings";
+import Iptv from "./pages/Iptv";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
             <Route path="/player" element={<VideoPlayer />} />
             <Route path="/arcade" element={<Arcade />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/iptv" element={<Iptv />} />
           </Routes>
         </HashRouter>
       </div>

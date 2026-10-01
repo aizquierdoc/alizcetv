@@ -1,10 +1,11 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Gamepad2, Play } from "lucide-react";
-import TopBar from "../components/TopBar";
+import FloatingControls from "../components/FloatingControls";
 import Focusable from "../components/Focusable";
 import GamepadLegend from "../components/GamepadLegend";
 import { useFocusEngine } from "../hooks/useFocusEngine";
+import { systemService } from "../services/alizceApi";
 
 const GAMES = [
   { id: "sf2", title: "Street Fighter II", year: 1991, platform: "CP-S", hue: "#ec4899" },
@@ -21,7 +22,9 @@ export default function Arcade() {
   const navigate = useNavigate();
   const { focusFirst } = useFocusEngine({
     enabled: true,
-    onBack: () => navigate(-1),
+    onBack: () => navigate("/"),
+    onMenu: () => navigate("/settings"),
+    onMinimize: () => systemService.minimize(),
   });
 
   useEffect(() => {
@@ -31,13 +34,13 @@ export default function Arcade() {
 
   return (
     <div data-testid="arcade-screen">
-      <TopBar />
-      <main className="relative px-10 lg:px-14 pb-24">
+      <FloatingControls />
+      <main className="relative px-10 lg:px-14 pt-10 pb-24">
         <div className="flex items-center gap-4 mb-8">
           <Focusable
             id="arcade-back"
             testId="btn-arcade-back"
-            onSelect={() => navigate(-1)}
+            onSelect={() => navigate("/")}
             className="w-11 h-11 rounded-xl glass flex items-center justify-center text-white"
           >
             <ArrowLeft size={18} />

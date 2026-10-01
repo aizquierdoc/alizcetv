@@ -42,6 +42,11 @@
         "from": "vendor/mpv",
         "to": "mpv",
         "filter": ["**/*"]
+      },
+      {
+        "from": "vendor/ytdlp",
+        "to": "ytdlp",
+        "filter": ["**/*"]
       }
     ],
     "win": {
