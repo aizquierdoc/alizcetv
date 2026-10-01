@@ -64,6 +64,15 @@ contextBridge.exposeInMainWorld("alizce", {
     setMode: (id, mode) => ipcRenderer.invoke("platform:setMode", { id, mode }),
   },
 
+  cinema: {
+    close: () => ipcRenderer.invoke("cinema:close"),
+    onState: (cb) => {
+      const handler = (_e, msg) => cb(msg);
+      ipcRenderer.on("cinema:state", handler);
+      return () => ipcRenderer.removeListener("cinema:state", handler);
+    },
+  },
+
   tmdb: {
     setApiKey: (key) => ipcRenderer.invoke("tmdb:setApiKey", key),
     scan: () => ipcRenderer.invoke("tmdb:scan"),

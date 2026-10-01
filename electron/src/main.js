@@ -113,7 +113,7 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
 
-app.on("before-quit", () => { app.isQuitting = true; });
+app.on("before-quit", () => { app.isQuitting = true; try { globalShortcut.unregisterAll(); } catch (_) {} });
 
 // ---------- System window actions ----------
 ipcMain.handle("system:minimize", () => { mainWindow?.minimize(); return { ok: true }; });
@@ -487,6 +487,8 @@ ipcMain.handle("shell:open", async (_e, p) => shell.openPath(p));
 
 // ---------- Streaming platform launcher ----------
 let cinemaWindow = null;
+let edgeCinemaProc = null; // tracked Edge --kiosk child process
+let cinemaEscapeRegistered = false;
 
 function resolveEdgePath() {
   const candidates = [
@@ -497,28 +499,75 @@ function resolveEdgePath() {
   return null;
 }
 
+function notifyCinemaState(open) {
+  try { mainWindow?.webContents.send("cinema:state", { open }); } catch (_) {}
+}
+
+function registerCinemaEscape() {
+  if (cinemaEscapeRegistered) return;
+  try {
+    globalShortcut.register("Escape", () => closeAnyCinema());
+    cinemaEscapeRegistered = true;
+  } catch (_) {}
+}
+function unregisterCinemaEscape() {
+  if (!cinemaEscapeRegistered) return;
+  try { globalShortcut.unregister("Escape"); } catch (_) {}
+  cinemaEscapeRegistered = false;
+}
+
+function closeAnyCinema() {
+  if (edgeCinemaProc && !edgeCinemaProc.killed) {
+    try {
+      if (process.platform === "win32") {
+        // taskkill forces the Edge --kiosk tree down (child renderers too)
+        spawn("taskkill", ["/pid", String(edgeCinemaProc.pid), "/T", "/F"], { stdio: "ignore" });
+      } else {
+        edgeCinemaProc.kill("SIGTERM");
+      }
+    } catch (_) {}
+  }
+  if (cinemaWindow) {
+    try { cinemaWindow.close(); } catch (_) {}
+  }
+}
+
 function openCinemaEdge(url, label) {
   const edge = resolveEdgePath();
   if (!edge) return false;
-  // --app runs Edge in app mode (no browser UI) with the user's default profile
-  // (uBlock Origin, SponsorBlock and other Edge extensions remain active).
-  // --start-fullscreen opens fullscreen on the primary display.
+  // --kiosk + --edge-kiosk-type=fullscreen = fully locked fullscreen app:
+  // no title bar, no close/minimize buttons, no way out via UI.
+  // Uses the user's default Edge profile so extensions (uBlock, SponsorBlock,
+  // etc.) stay active. Escape is intercepted via globalShortcut (closes
+  // the whole Edge process). Gamepad Y is handled from the renderer.
   const args = [
-    `--app=${url}`,
-    "--start-fullscreen",
+    `--kiosk`,
+    url,
+    `--edge-kiosk-type=fullscreen`,
     "--no-first-run",
     "--no-default-browser-check",
   ];
   try {
-    spawn(edge, args, { detached: true, stdio: "ignore" }).unref();
+    edgeCinemaProc = spawn(edge, args, { detached: false, stdio: "ignore" });
+    registerCinemaEscape();
+    notifyCinemaState(true);
+    edgeCinemaProc.on("exit", () => {
+      edgeCinemaProc = null;
+      if (!cinemaWindow) {
+        unregisterCinemaEscape();
+        notifyCinemaState(false);
+      }
+      mainWindow?.focus();
+    });
     return true;
   } catch (_) {
+    edgeCinemaProc = null;
     return false;
   }
 }
 
 function openCinema(url, label, options = {}) {
-  // Prefer Microsoft Edge in app-fullscreen mode on Windows so user keeps
+  // Prefer Microsoft Edge in kiosk mode on Windows so user keeps
   // their installed extensions (uBlock, SponsorBlock, downloaders…).
   if (process.platform === "win32" && !options.forceElectron) {
     if (openCinemaEdge(url, label)) return;
@@ -554,7 +603,16 @@ function openCinema(url, label, options = {}) {
   if (options.withYtDlp) {
     cinemaWindow.webContents.on("did-finish-load", () => injectYtDlpOverlay());
   }
-  cinemaWindow.on("closed", () => { cinemaWindow = null; mainWindow?.focus(); });
+  registerCinemaEscape();
+  notifyCinemaState(true);
+  cinemaWindow.on("closed", () => {
+    cinemaWindow = null;
+    if (!edgeCinemaProc) {
+      unregisterCinemaEscape();
+      notifyCinemaState(false);
+    }
+    mainWindow?.focus();
+  });
 }
 
 function injectYtDlpOverlay() {
@@ -694,6 +752,14 @@ ipcMain.handle("platform:setMode", (_e, { id, mode }) => {
   modes[id] = mode;
   store.set("platformModes", modes);
   return modes;
+});
+
+// Close whichever cinema is active (Edge --kiosk child or Electron window).
+// Invoked by renderer when user presses gamepad Y, or anything that needs
+// to force-close the current full-screen app.
+ipcMain.handle("cinema:close", () => {
+  closeAnyCinema();
+  return { ok: true };
 });
 
 // ---------- TMDB catalog ----------

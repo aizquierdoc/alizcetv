@@ -2,6 +2,7 @@ import React from "react";
 import "./App.css";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import AuroraBackground from "./components/AuroraBackground";
+import CinemaExitWatcher from "./components/CinemaExitWatcher";
 import Home from "./pages/Home";
 import NetworkBrowser from "./pages/NetworkBrowser";
 import VideoPlayer from "./pages/VideoPlayer";
@@ -13,6 +14,7 @@ function App() {
   return (
     <div className="App">
       <AuroraBackground />
+      <CinemaExitWatcher />
       <div className="app-content">
         <HashRouter>
           <Routes>
