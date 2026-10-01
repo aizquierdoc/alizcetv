@@ -47,21 +47,23 @@ export default function NetworkBrowser() {
 
   const openItem = (it) => {
     if (!it.isVideo) {
-      // Folder → navigate into
       setCurrentPath(it.path);
       return;
     }
+    const title = it.tmdb?.title || cleanTitle(it.name);
+    const image = it.tmdb?.poster || it.mockMeta?.poster;
     navigate("/player", {
       state: {
         item: {
           id: it.path,
-          title: cleanTitle(it.name),
-          subtitle: `${share} · ${currentPath || "/"}`,
+          title,
+          subtitle: `${share} · ${it.tmdb?.year || ""} ${it.tmdb?.genres?.slice(0, 2).join(" · ") || ""}`.trim(),
           share,
           folder: it.path,
           audio: it.mockMeta?.audio ? [`Español (${it.mockMeta.audio})`, "English (Original)"] : ["Pista principal", "Pista secundaria"],
           subs: it.mockMeta?.audio === "Stereo" ? [] : ["Español", "English"],
-          image: it.mockMeta?.poster,
+          image,
+          overview: it.tmdb?.overview,
         },
       },
     });
@@ -120,63 +122,77 @@ export default function NetworkBrowser() {
 
         {!loading && !error && items.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5 lg:gap-6">
-            {items.map((it, idx) => (
-              <Focusable
-                key={it.path + idx}
-                id={`item-${idx}`}
-                testId={`item-${idx}`}
-                onSelect={() => openItem(it)}
-                className="relative rounded-xl overflow-hidden aspect-[2/3] group text-left"
-              >
-                {it.mockMeta?.poster ? (
-                  <img
-                    src={it.mockMeta.poster}
-                    alt={it.name}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                <div className="absolute top-3 right-3">
-                  <span className="text-[9px] font-mono tracking-widest px-2 py-0.5 bg-black/60 border border-white/15 rounded uppercase text-slate-300">
-                    {it.isVideo ? "Video" : "Carpeta"}
-                  </span>
-                </div>
-                <div className="absolute inset-x-0 bottom-0 p-3">
-                  <h3 className="font-title text-sm text-white uppercase tracking-wide line-clamp-2">
-                    {cleanTitle(it.name)}
-                  </h3>
-                  <div className="flex items-center justify-between mt-1">
-                    {it.mockMeta?.year && (
-                      <span className="text-[9px] font-mono tracking-widest text-slate-400">
-                        {it.mockMeta.year}
-                      </span>
-                    )}
-                    {it.mockMeta?.res && (
-                      <span className="text-[9px] font-mono tracking-widest px-1.5 py-0.5 bg-cyan-500/15 border border-cyan-400/30 rounded text-cyan-300">
-                        {it.mockMeta.res}
-                      </span>
-                    )}
-                  </div>
-                  {it.mockMeta?.progress != null && (
-                    <div className="mt-2 progress-track">
-                      <div className="progress-fill" style={{ width: `${it.mockMeta.progress}%` }} />
+            {items.map((it, idx) => {
+              const poster = it.tmdb?.poster || it.mockMeta?.poster;
+              const title = it.tmdb?.title || cleanTitle(it.name);
+              const year = it.tmdb?.year || it.mockMeta?.year;
+              const res = it.mockMeta?.res;
+              const rating = it.tmdb?.rating;
+              return (
+                <Focusable
+                  key={it.path + idx}
+                  id={`item-${idx}`}
+                  testId={`item-${idx}`}
+                  onSelect={() => openItem(it)}
+                  className="relative rounded-xl overflow-hidden aspect-[2/3] group text-left"
+                >
+                  {poster ? (
+                    <img
+                      src={poster}
+                      alt={title}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+                      <Film size={32} className="text-slate-700" />
                     </div>
                   )}
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-[&[data-focused='true']]:opacity-100 transition-opacity">
-                  <div className="w-14 h-14 rounded-full bg-cyan-400/20 border border-cyan-300 backdrop-blur flex items-center justify-center shadow-[0_0_30px_rgba(56,189,248,0.8)]">
-                    {it.isVideo ? (
-                      <Play size={22} className="text-white fill-white ml-1" />
-                    ) : (
-                      <Folder size={22} className="text-white" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                  <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end">
+                    <span className="text-[9px] font-mono tracking-widest px-2 py-0.5 bg-black/60 border border-white/15 rounded uppercase text-slate-300">
+                      {it.isVideo ? "Video" : "Carpeta"}
+                    </span>
+                    {rating != null && rating > 0 && (
+                      <span className="text-[9px] font-mono tracking-widest px-2 py-0.5 bg-amber-500/20 border border-amber-400/40 rounded text-amber-300">
+                        ★ {rating.toFixed(1)}
+                      </span>
                     )}
                   </div>
-                </div>
-              </Focusable>
-            ))}
+                  <div className="absolute inset-x-0 bottom-0 p-3">
+                    <h3 className="font-title text-sm text-white uppercase tracking-wide line-clamp-2">
+                      {title}
+                    </h3>
+                    <div className="flex items-center justify-between mt-1">
+                      {year && (
+                        <span className="text-[9px] font-mono tracking-widest text-slate-400">
+                          {year}
+                        </span>
+                      )}
+                      {res && (
+                        <span className="text-[9px] font-mono tracking-widest px-1.5 py-0.5 bg-cyan-500/15 border border-cyan-400/30 rounded text-cyan-300">
+                          {res}
+                        </span>
+                      )}
+                    </div>
+                    {it.mockMeta?.progress != null && (
+                      <div className="mt-2 progress-track">
+                        <div className="progress-fill" style={{ width: `${it.mockMeta.progress}%` }} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-[&[data-focused='true']]:opacity-100 transition-opacity">
+                    <div className="w-14 h-14 rounded-full bg-cyan-400/20 border border-cyan-300 backdrop-blur flex items-center justify-center shadow-[0_0_30px_rgba(56,189,248,0.8)]">
+                      {it.isVideo ? (
+                        <Play size={22} className="text-white fill-white ml-1" />
+                      ) : (
+                        <Folder size={22} className="text-white" />
+                      )}
+                    </div>
+                  </div>
+                </Focusable>
+              );
+            })}
           </div>
         )}
       </main>

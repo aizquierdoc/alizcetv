@@ -44,7 +44,14 @@ TV box app para Windows 11 Home llamada **AlizceTV**: acceso unificado a platafo
 - 9 plataformas streaming (abren web oficial).
 - Reproductor con aspect ratio / subs / audio y estados deshabilitados.
 
-### 2026-01-01 — Logo y Launcher inteligente multi-plataforma
+### 2026-01-01 — TMDB catalog integration
+- Nuevo módulo `electron/src/tmdb.js` con parser de nombres de archivo (SxxEyy, 1x05, Title.2024, limpieza de tags de calidad), cliente TMDB con `/search/movie`, `/search/tv` y detalles con `append_to_response`, fallback de idioma es-ES → en-US, rate-limit a 8 req concurrentes, caché JSON en disco y descarga de pósters en `%APPDATA%\AlizceTV\posters\`.
+- Protocolo Electron `alizceposter://` registrado para servir pósters locales de forma segura (sin desactivar webSecurity).
+- IPC: `tmdb:setApiKey`, `tmdb:scan`, `tmdb:lookup`, `tmdb:status`, `tmdb:getCached` + eventos `tmdb:scan-start/progress/complete/error`.
+- Escaneo automático en segundo plano 3s después del arranque si hay API key configurada; botón manual "Rescanear catálogo" en Ajustes con barra de progreso en vivo.
+- `smb:listFolder` ahora adjunta metadatos TMDB cacheados a cada archivo de vídeo (poster local, título limpio, año, rating, overview, géneros).
+- Pantalla Settings con sección TMDB: enlaces directos a registro y a `/settings/api` de TMDB, campo password para la clave, estado del último escaneo y botón de rescaneo.
+- NetworkBrowser renderiza pósters TMDB cuando están disponibles, muestra rating con estrella ámbar, título real y año limpios en lugar del nombre de archivo.
 - Logo generado: `A` monograma con gradiente cian→índigo→violeta, scan line de TV, glow aura, badge "TV" y bordes redondeados en fondo oscuro.
 - Entregables: `electron/build/logo.svg`, `logo-512.png`, `icon-256.png`, `icon.ico` (multi-resolución 16/24/32/48/64/128/256). SVG también en `frontend/public/logo.svg` y usado en TopBar + favicon.
 - **Platform launcher inteligente** (`electron/src/platforms.js`): matriz por plataforma con 3 modos (`uwp` / `cinema` / `external`).

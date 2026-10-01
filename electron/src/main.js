@@ -1,7 +1,7 @@
 // AlizceTV — Electron main process
 // Window, IPC bridge for SMB listing, settings, CoinOps launch, MPV control.
 
-const { app, BrowserWindow, ipcMain, dialog, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, shell, protocol } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
@@ -9,6 +9,7 @@ const net = require("net");
 const Store = require("electron-store");
 const SMB2 = require("@marsaud/smb2");
 const PLATFORMS = require("./platforms");
+const { TmdbClient } = require("./tmdb");
 
 const isDev = process.argv.includes("--dev");
 
@@ -23,7 +24,9 @@ const store = new Store({
     coinopsPath: "",
     mpvPath: "",
     continueWatching: [],
-    platformModes: {}, // { netflix: 'uwp'|'cinema'|'external', ... }
+    platformModes: {},
+    tmdbApiKey: "",
+    lastScanAt: null,
   },
 });
 
@@ -32,6 +35,11 @@ let mpvProc = null;
 let mpvIpcSocket = null;
 let mpvRequestId = 1;
 const mpvPending = new Map();
+
+// TMDB client (initialized on app ready, re-keyed when user changes API key)
+const userDataDir = app.getPath ? null : null; // placeholder — set in whenReady
+let tmdb = null;
+let scanRunning = false;
 
 // -------- Window --------
 function createWindow() {
@@ -71,7 +79,21 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  // Initialize TMDB client with user cache dir
+  const cacheDir = path.join(app.getPath("userData"));
+  tmdb = new TmdbClient({ apiKey: store.get("tmdbApiKey") || "", cacheDir });
+
+  // Custom protocol to serve locally cached TMDB posters securely
+  protocol.registerFileProtocol("alizceposter", (request, callback) => {
+    const url = request.url.replace(/^alizceposter:\/\//, "");
+    const safe = url.replace(/[^a-z0-9._-]/gi, "_");
+    callback({ path: path.join(cacheDir, "posters", safe) });
+  });
+
+  createWindow();
+  setTimeout(() => { if (store.get("tmdbApiKey")) runFullScan(false).catch(() => {}); }, 3000);
+});
 app.on("window-all-closed", () => {
   killMpv();
   if (process.platform !== "darwin") app.quit();
@@ -124,12 +146,27 @@ ipcMain.handle("smb:listFolder", async (_e, { share, folder }) => {
         smb.disconnect?.();
         return resolve({ error: err.message, items: [] });
       }
-      // Mark folders vs files (SMB2 lib: use stat per item)
-      const items = (files || []).map((name) => ({
-        name,
-        path: folder ? `${folder}\\${name}` : name,
-        isVideo: /\.(mkv|mp4|avi|mov|m4v|wmv|ts|webm)$/i.test(name),
-      }));
+      const items = (files || []).map((name) => {
+        const isVideo = /\.(mkv|mp4|avi|mov|m4v|wmv|ts|webm)$/i.test(name);
+        const base = { name, path: folder ? `${folder}\\${name}` : name, isVideo };
+        // Attach TMDB metadata if cached
+        if (isVideo && tmdb) {
+          const cached = tmdb.getCached(name);
+          if (cached && !cached.notFound && !cached.error) {
+            const posterFile = cached.localPoster ? path.basename(cached.localPoster) : null;
+            base.tmdb = {
+              title: cached.title,
+              year: cached.year,
+              overview: cached.overview,
+              rating: cached.rating,
+              genres: cached.genres,
+              poster: posterFile ? `alizceposter://${posterFile}` : cached.posterUrl,
+              backdrop: cached.backdropUrl,
+            };
+          }
+        }
+        return base;
+      });
       smb.disconnect?.();
       resolve({ items });
     });
@@ -352,3 +389,84 @@ ipcMain.handle("platform:setMode", (_e, { id, mode }) => {
   store.set("platformModes", modes);
   return modes;
 });
+
+// ---------- TMDB catalog ----------
+async function listAllVideosInShare(share) {
+  // Recursively list up to depth 2 to grab Peliculas/*.mkv and Series/*/*/*.mkv
+  const files = [];
+  const walk = (folder, depth) => new Promise((resolve) => {
+    const smb = makeSmb(share);
+    smb.readdir(folder || "", (err, entries) => {
+      smb.disconnect?.();
+      if (err || !entries) return resolve();
+      Promise.all(entries.map(async (name) => {
+        const full = folder ? `${folder}\\${name}` : name;
+        if (/\.(mkv|mp4|avi|mov|m4v|wmv|ts|webm)$/i.test(name)) {
+          files.push({ share, folder: full, name });
+        } else if (depth < 2 && !/\.[a-z0-9]{2,4}$/i.test(name)) {
+          await walk(full, depth + 1);
+        }
+      })).then(resolve);
+    });
+  });
+  await walk("", 0);
+  return files;
+}
+
+async function runFullScan(sendProgress = true) {
+  if (scanRunning) return { error: "Ya hay un escaneo en curso" };
+  if (!tmdb || !store.get("tmdbApiKey")) return { error: "Configura la API Key de TMDB en Ajustes" };
+  scanRunning = true;
+  mainWindow?.webContents.send("tmdb:scan-start");
+  try {
+    const shares = store.get("smbShares") || [];
+    let allFiles = [];
+    for (const share of shares) {
+      try {
+        const files = await listAllVideosInShare(share);
+        allFiles = allFiles.concat(files);
+      } catch (e) {
+        mainWindow?.webContents.send("tmdb:scan-error", { share, error: e.message });
+      }
+    }
+    const filenames = allFiles.map((f) => f.name);
+    const results = await tmdb.scanFiles(filenames, ({ done, total, file }) => {
+      if (sendProgress) mainWindow?.webContents.send("tmdb:scan-progress", { done, total, file });
+    });
+    store.set("lastScanAt", Date.now());
+    mainWindow?.webContents.send("tmdb:scan-complete", {
+      total: filenames.length,
+      resolved: results.filter((r) => r.info && !r.info.notFound).length,
+    });
+    return { ok: true, total: filenames.length, resolved: results.length };
+  } catch (e) {
+    mainWindow?.webContents.send("tmdb:scan-error", { error: e.message });
+    return { error: e.message };
+  } finally {
+    scanRunning = false;
+  }
+}
+
+ipcMain.handle("tmdb:setApiKey", (_e, key) => {
+  store.set("tmdbApiKey", key || "");
+  tmdb?.setApiKey(key || "");
+  return { ok: true };
+});
+
+ipcMain.handle("tmdb:scan", async () => runFullScan(true));
+
+ipcMain.handle("tmdb:lookup", async (_e, filename) => {
+  if (!tmdb) return null;
+  return tmdb.lookup(filename);
+});
+
+ipcMain.handle("tmdb:getCached", (_e, filename) => {
+  if (!tmdb) return null;
+  return tmdb.getCached(filename);
+});
+
+ipcMain.handle("tmdb:status", () => ({
+  hasKey: !!store.get("tmdbApiKey"),
+  lastScanAt: store.get("lastScanAt") || null,
+  running: scanRunning,
+}));

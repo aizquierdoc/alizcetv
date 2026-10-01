@@ -120,6 +120,35 @@ export const platformService = {
   },
 };
 
+// ----- TMDB -----
+export const tmdbService = {
+  async status() {
+    if (api) return api.tmdb.status();
+    return { hasKey: false, lastScanAt: null, running: false };
+  },
+  async setApiKey(key) {
+    if (api) return api.tmdb.setApiKey(key);
+    return { ok: true };
+  },
+  async scan() {
+    if (api) return api.tmdb.scan();
+    alert("El escaneo TMDB solo funciona en la app de Windows.");
+    return { error: "no-electron" };
+  },
+  async lookup(filename) {
+    if (api) return api.tmdb.lookup(filename);
+    return null;
+  },
+  async getCached(filename) {
+    if (api) return api.tmdb.getCached(filename);
+    return null;
+  },
+  onProgress(cb) {
+    if (api) return api.tmdb.onProgress(cb);
+    return () => {};
+  },
+};
+
 // ----- CoinOps -----
 export const coinopsService = {
   async launch() {

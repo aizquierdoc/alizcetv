@@ -78,14 +78,31 @@ En **Modo cine** se abre una `BrowserWindow` fullscreen sin bordes con User-Agen
 Smart TV (muchos sitios muestran su UI optimizada para TV). Pulsando Esc / B del
 pad se cierra y vuelves a AlizceTV.
 
-## Arquitectura
+## Catálogo TMDB
+
+AlizceTV descarga pósters reales, títulos limpios y sinopsis en español (fallback inglés) de tus archivos de la red SMB.
+
+**Primer uso**: en Ajustes → Catálogo TMDB, pulsa el enlace "Regístrate en TMDB", crea una cuenta gratuita, luego "Solicita una clave de API v3" (toma 2 min y es gratis), copia la clave de 32 caracteres y pégala en AlizceTV. Pulsa "Rescanear catálogo".
+
+**Qué hace**:
+- Al arrancar la app (3s después) escanea en segundo plano todos los `.mkv/.mp4/.avi/...` de los recursos SMB configurados.
+- Parsea el nombre para extraer título / año / temporada / episodio (reconoce patrones `SxxEyy`, `1x05`, `Title.2024.1080p.*`).
+- Deduplica series (una serie = una consulta aunque haya 30 episodios).
+- Descarga la carátula a `%APPDATA%\AlizceTV\posters\` (se sirve en la UI con el protocolo `alizceposter://`).
+- Guarda caché en `%APPDATA%\AlizceTV\tmdb-cache.json` — no vuelve a consultar lo ya resuelto.
+- Rate limit: 8 peticiones concurrentes para respetar los límites de TMDB.
+
+El estado del escaneo (progreso, archivos resueltos, último escaneo) aparece en Ajustes.
+
+
 
 ```
 electron/
 ├── src/
 │   ├── main.js       Electron main (ventana, IPC, SMB, MPV, CoinOps, Platforms)
 │   ├── preload.js    Context bridge (window.alizce)
-│   └── platforms.js  Matriz de plataformas con protocolo UWP / web / modo
+│   ├── platforms.js  Matriz de plataformas con protocolo UWP / web / modo
+│   └── tmdb.js       Cliente TMDB (parse filename, cache, descarga pósters)
 ├── scripts/
 │   └── copy-react.js Copia frontend/build → electron/renderer
 ├── vendor/mpv/       Colocar mpv.exe aquí (empaquetado en el instalador)
@@ -103,6 +120,7 @@ El `main.js` expone estas APIs a React vía `window.alizce`:
 - `alizce.mpv.onEvent(cb)` – escucha propiedades observadas (tiempo, pause, tracks)
 - `alizce.coinops.launch()` – lanza el ejecutable de CoinOps configurado
 - `alizce.platform.list() / launch(id) / setMode(id, mode)` – gestión y lanzamiento de plataformas de streaming (uwp / cine / externo)
+- `alizce.tmdb.setApiKey(key) / scan() / lookup(file) / status() / onProgress(cb)` – catálogo TMDB con caché local y descarga de pósters
 - `alizce.settings.get() / set(patch) / pickFile(opts)` – ajustes persistentes
 - `alizce.cw.get() / upsert(entry)` – progreso "Continuar viendo" persistido
 

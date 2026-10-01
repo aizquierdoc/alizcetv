@@ -44,4 +44,28 @@ contextBridge.exposeInMainWorld("alizce", {
     launch: (id) => ipcRenderer.invoke("platform:launch", id),
     setMode: (id, mode) => ipcRenderer.invoke("platform:setMode", { id, mode }),
   },
+
+  tmdb: {
+    setApiKey: (key) => ipcRenderer.invoke("tmdb:setApiKey", key),
+    scan: () => ipcRenderer.invoke("tmdb:scan"),
+    lookup: (filename) => ipcRenderer.invoke("tmdb:lookup", filename),
+    getCached: (filename) => ipcRenderer.invoke("tmdb:getCached", filename),
+    status: () => ipcRenderer.invoke("tmdb:status"),
+    onProgress: (cb) => {
+      const start = () => cb({ type: "start" });
+      const prog = (_e, data) => cb({ type: "progress", ...data });
+      const done = (_e, data) => cb({ type: "complete", ...data });
+      const err = (_e, data) => cb({ type: "error", ...data });
+      ipcRenderer.on("tmdb:scan-start", start);
+      ipcRenderer.on("tmdb:scan-progress", prog);
+      ipcRenderer.on("tmdb:scan-complete", done);
+      ipcRenderer.on("tmdb:scan-error", err);
+      return () => {
+        ipcRenderer.removeListener("tmdb:scan-start", start);
+        ipcRenderer.removeListener("tmdb:scan-progress", prog);
+        ipcRenderer.removeListener("tmdb:scan-complete", done);
+        ipcRenderer.removeListener("tmdb:scan-error", err);
+      };
+    },
+  },
 });

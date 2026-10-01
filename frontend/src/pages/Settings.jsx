@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, FolderSearch, Save, HardDrive, Film, Gamepad2, Check, Tv } from "lucide-react";
+import { ArrowLeft, FolderSearch, Save, HardDrive, Film, Gamepad2, Check, Tv, Key, RefreshCw, Loader2, ExternalLink } from "lucide-react";
 import TopBar from "../components/TopBar";
 import Focusable from "../components/Focusable";
 import GamepadLegend from "../components/GamepadLegend";
 import { useFocusEngine } from "../hooks/useFocusEngine";
-import { settingsService, platformService, isElectron } from "../services/alizceApi";
+import { settingsService, platformService, tmdbService, isElectron } from "../services/alizceApi";
 
 export default function Settings() {
   const navigate = useNavigate();
   const [settings, setSettings] = useState(null);
   const [platforms, setPlatforms] = useState([]);
   const [saved, setSaved] = useState(false);
+  const [tmdbKey, setTmdbKey] = useState("");
+  const [tmdbStatus, setTmdbStatus] = useState({ hasKey: false, lastScanAt: null, running: false });
+  const [scanProgress, setScanProgress] = useState(null);
 
   const { focusFirst } = useFocusEngine({
     enabled: true,
@@ -19,10 +22,25 @@ export default function Settings() {
   });
 
   useEffect(() => {
-    settingsService.get().then(setSettings);
+    settingsService.get().then((s) => {
+      setSettings(s);
+      if (s.tmdbApiKey) setTmdbKey(s.tmdbApiKey);
+    });
     platformService.list().then(setPlatforms);
+    tmdbService.status().then(setTmdbStatus);
+
+    const off = tmdbService.onProgress((msg) => {
+      if (msg.type === "start") setScanProgress({ done: 0, total: 0, file: "Iniciando…" });
+      if (msg.type === "progress") setScanProgress({ done: msg.done, total: msg.total, file: msg.file });
+      if (msg.type === "complete") {
+        setScanProgress(null);
+        tmdbService.status().then(setTmdbStatus);
+      }
+      if (msg.type === "error") setScanProgress(null);
+    });
+
     const t = setTimeout(focusFirst, 200);
-    return () => clearTimeout(t);
+    return () => { clearTimeout(t); off(); };
   }, [focusFirst]);
 
   const update = (patch) => setSettings((s) => ({ ...s, ...patch }));
@@ -34,8 +52,23 @@ export default function Settings() {
 
   const save = async () => {
     await settingsService.set(settings);
+    if (tmdbKey !== (settings.tmdbApiKey || "")) {
+      await tmdbService.setApiKey(tmdbKey);
+      await settingsService.set({ tmdbApiKey: tmdbKey });
+      const st = await tmdbService.status();
+      setTmdbStatus(st);
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 1800);
+  };
+
+  const rescan = async () => {
+    setScanProgress({ done: 0, total: 0, file: "Iniciando…" });
+    const res = await tmdbService.scan();
+    if (res?.error) {
+      setScanProgress(null);
+      alert(res.error);
+    }
   };
 
   if (!settings) return null;
@@ -107,6 +140,85 @@ export default function Settings() {
             <div className="text-xs font-mono tracking-widest text-emerald-300/80">
               Acceso en modo Invitado (sin usuario/contraseña).
             </div>
+          </div>
+        </section>
+
+        {/* TMDB catalog */}
+        <section className="mb-10">
+          <h3 className="font-title text-xl text-white tracking-widest uppercase mb-5 flex items-center gap-3">
+            <Key size={20} className="text-amber-400" /> Catálogo TMDB
+          </h3>
+          <div className="glass rounded-2xl p-6 space-y-5">
+            <p className="text-xs text-slate-400 leading-relaxed">
+              AlizceTV usa TMDB para descargar pósters reales, títulos limpios y sinopsis
+              en español de tus películas y series. La API es gratuita.
+              <br />
+              <a
+                href="https://www.themoviedb.org/signup"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-cyan-300 hover:text-cyan-200 mt-1"
+                data-testid="link-tmdb-signup"
+              >
+                1) Regístrate en TMDB <ExternalLink size={11} />
+              </a>
+              <br />
+              <a
+                href="https://www.themoviedb.org/settings/api"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-cyan-300 hover:text-cyan-200"
+                data-testid="link-tmdb-api"
+              >
+                2) Solicita una clave de API v3 (gratis, 2 min) <ExternalLink size={11} />
+              </a>
+              <br />
+              3) Pégala aquí y pulsa "Rescanear".
+            </p>
+
+            <Field label="API Key TMDB v3" hint="Clave de 32 caracteres hexadecimal. Se guarda localmente en %APPDATA%\AlizceTV\config.json.">
+              <input
+                data-testid="input-tmdb-key"
+                type="password"
+                placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono tracking-wider focus:outline-none focus:border-amber-400"
+                value={tmdbKey}
+                onChange={(e) => setTmdbKey(e.target.value.trim())}
+              />
+            </Field>
+
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="text-xs font-mono tracking-widest uppercase">
+                {scanProgress ? (
+                  <span className="text-cyan-300 flex items-center gap-2">
+                    <Loader2 className="animate-spin" size={14} />
+                    Escaneando {scanProgress.done}/{scanProgress.total || "…"}
+                    {scanProgress.file ? ` · ${scanProgress.file.slice(0, 50)}` : ""}
+                  </span>
+                ) : tmdbStatus.hasKey ? (
+                  <span className="text-emerald-300">
+                    Último escaneo: {tmdbStatus.lastScanAt ? new Date(tmdbStatus.lastScanAt).toLocaleString("es-ES") : "nunca"}
+                  </span>
+                ) : (
+                  <span className="text-slate-500">Sin clave configurada</span>
+                )}
+              </div>
+              <Focusable
+                id="btn-rescan"
+                testId="btn-rescan"
+                onSelect={rescan}
+                className="h-11 px-5 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-200 flex items-center gap-2 font-mono tracking-widest uppercase text-xs"
+              >
+                <RefreshCw size={14} className={scanProgress ? "animate-spin" : ""} />
+                Rescanear catálogo
+              </Focusable>
+            </div>
+
+            {scanProgress && scanProgress.total > 0 && (
+              <div className="progress-track">
+                <div className="progress-fill" style={{ width: `${(scanProgress.done / scanProgress.total) * 100}%` }} />
+              </div>
+            )}
           </div>
         </section>
 
