@@ -1,0 +1,232 @@
+{
+  "product_name": "AlizceTV",
+  "app_type": "10-foot TV Launcher App (Windows 11 / Electron Web Prototype)",
+  "language": "es",
+  "theme_strategy": "Cinematic Dark Glassmorphism with Animated Dark Aurora Background",
+  "typography": {
+    "title_font": "AZONIX",
+    "title_font_fallback": "'AZONIX', 'Unbounded', 'Bebas Neue', sans-serif",
+    "title_font_url": "https://fonts.cdnfonts.com/css/azonix",
+    "body_font": "Outfit",
+    "body_font_url": "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap",
+    "mono_font": "JetBrains Mono",
+    "hierarchy": {
+      "app_logo": "font-title text-3xl tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 filter drop-shadow-[0_0_12px_rgba(56,189,248,0.5)]",
+      "h1_hero": "font-title text-3xl sm:text-4xl lg:text-5xl tracking-wide uppercase text-white drop-shadow-md",
+      "h2_section": "font-title text-xl sm:text-2xl tracking-wider uppercase text-slate-200 flex items-center gap-3",
+      "h3_card": "font-title text-lg tracking-wide uppercase text-white truncate",
+      "body_lg": "font-sans text-lg text-slate-300 leading-relaxed",
+      "body_base": "font-sans text-base text-slate-400",
+      "body_sm": "font-sans text-sm text-slate-400",
+      "badge_label": "font-sans text-xs font-semibold tracking-wider uppercase"
+    }
+  },
+  "colors": {
+    "background_base": "#05070D",
+    "background_aurora": {
+      "cyan_blob": "rgba(14, 165, 233, 0.18)",
+      "indigo_blob": "rgba(99, 102, 241, 0.20)",
+      "violet_blob": "rgba(139, 92, 246, 0.15)",
+      "teal_blob": "rgba(20, 184, 166, 0.12)"
+    },
+    "surface": {
+      "card_bg": "rgba(15, 23, 42, 0.65)",
+      "card_border": "rgba(255, 255, 255, 0.12)",
+      "card_focus_bg": "rgba(30, 41, 59, 0.85)",
+      "card_focus_border": "rgba(56, 189, 248, 0.9)",
+      "overlay_glass": "rgba(8, 12, 22, 0.75)",
+      "overlay_border": "rgba(255, 255, 255, 0.15)"
+    },
+    "brand_accents": {
+      "primary": "#38BDF8",
+      "primary_glow": "rgba(56, 189, 248, 0.6)",
+      "arcade_magenta": "#EC4899",
+      "arcade_glow": "rgba(236, 72, 153, 0.6)",
+      "network_emerald": "#10B981",
+      "network_glow": "rgba(16, 185, 129, 0.5)",
+      "status_online": "#22C55E",
+      "focus_ring": "#00F0FF"
+    },
+    "streaming_brands": {
+      "netflix": { "bg": "#E50914", "label": "Netflix" },
+      "prime": { "bg": "#00A8E1", "label": "Prime Video" },
+      "disney": { "bg": "#113CCF", "label": "Disney+" },
+      "hbo": { "bg": "#5822B4", "label": "HBO Max" },
+      "movistar": { "bg": "#002B49", "label": "Movistar+" },
+      "apple": { "bg": "#1C1C1E", "label": "Apple TV+" },
+      "youtube": { "bg": "#FF0000", "label": "YouTube" },
+      "twitch": { "bg": "#9146FF", "label": "Twitch" },
+      "filmin": { "bg": "#000000", "label": "Filmin" }
+    }
+  },
+  "layout_and_spacing": {
+    "tv_safe_padding": "px-12 py-8 lg:px-16 lg:py-10",
+    "grid_gap": "gap-6 lg:gap-8",
+    "tile_aspect_ratios": {
+      "continue_watching": "aspect-[16/9] w-full max-w-[420px]",
+      "streaming_grid": "aspect-[16/10]",
+      "poster_grid": "aspect-[2/3]",
+      "network_tile": "aspect-[16/9]"
+    },
+    "focus_transform": "transform transition-all duration-200 ease-out scale-105 md:scale-108 -translate-y-1.5 shadow-[0_12px_32px_rgba(0,240,255,0.35)] ring-4 ring-[#00F0FF] z-20"
+  },
+  "gamepad_navigation": {
+    "supported_controllers": ["8BitDo Ultimate 2C", "Xbox / XInput Gamepad", "Keyboard D-Pad Arrow Keys"],
+    "key_bindings": {
+      "NAV_UP": ["ArrowUp", "Gamepad_DPad_Up", "Gamepad_Axis0_Up"],
+      "NAV_DOWN": ["ArrowDown", "Gamepad_DPad_Down", "Gamepad_Axis0_Down"],
+      "NAV_LEFT": ["ArrowLeft", "Gamepad_DPad_Left", "Gamepad_Axis1_Left"],
+      "NAV_RIGHT": ["ArrowRight", "Gamepad_DPad_Right", "Gamepad_Axis1_Right"],
+      "ACTION_CONFIRM": ["Enter", "Space", "Gamepad_Button_0_A"],
+      "ACTION_BACK": ["Escape", "Backspace", "Gamepad_Button_1_B"],
+      "ACTION_MENU": ["m", "M", "Gamepad_Button_3_Y"],
+      "PLAYER_TOGGLE_ASPECT": ["a", "A", "Gamepad_Button_2_X"]
+    },
+    "navigation_engine_rules": [
+      "No mouse cursor required or visible during sofa navigation",
+      "Spatial navigation auto-detects nearest focusable element in direction pressed",
+      "Focused element automatically scrolls smoothly into center of 10-foot view (`scrollIntoView({ behavior: 'smooth', block: 'nearest' })`)",
+      "Audible or visual ripple effect when changing focus state",
+      "Focus state remains persistent when returning from video player or sub-directories"
+    ]
+  },
+  "screens": {
+    "top_bar": {
+      "left_brand": "AlizceTV logo rendered in AZONIX display font with animated gradient fill",
+      "center_status": "Network status badge ('192.168.1.200: CONECTADO')",
+      "right_clock": "24h Live Digital Clock (HH:MM:SS) + Spanish Date ('Lunes, 24 de Julio')"
+    },
+    "home_screen": {
+      "continue_watching_section": {
+        "title": "CONTINUAR VIENDO",
+        "description": "Mini-thumbnails for last 3 unfinished videos with progress bar overlay and remaining time",
+        "mock_items": [
+          {
+            "id": "cw-1",
+            "title": "Dune: Parte Dos",
+            "subtitle": "SMB Películas • 1080p",
+            "progress_percent": 68,
+            "remaining_time": "38 min restantes",
+            "image": "https://images.unsplash.com/photo-1778585040075-0991abfd4ed9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTV8MHwxfHNlYXJjaHwyfHxtb3ZpZSUyMHBvc3RlciUyMGRhcmslMjBjaW5lbWF0aWN8ZW58MHx8fHwxNzkwODQ5MzczfDA&ixlib=rb-4.1.0&q=85",
+            "file_path": "//192.168.1.200/Peliculas/Dune.Parte.Dos.2024.mkv",
+            "audio_tracks": ["Español (5.1 Dolby)", "English (Atmos)"],
+            "subtitles": ["Español (SRT)", "English (Forced)"]
+          },
+          {
+            "id": "cw-2",
+            "title": "The Last of Us S01E05",
+            "subtitle": "SMB Series • 4K HDR",
+            "progress_percent": 42,
+            "remaining_time": "24 min restantes",
+            "image": "https://images.unsplash.com/photo-1773592612185-bd985ac2bfe2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTV8MHwxfHNlYXJjaHwzfHxtb3ZpZSUyMHBvc3RlciUyMGRhcmslMjBjaW5lbWF0aWN8ZW58MHx8fHwxNzkwODQ5MzczfDA&ixlib=rb-4.1.0&q=85",
+            "file_path": "//192.168.1.200/Series/TLOU/S01E05.mkv",
+            "audio_tracks": ["Español Castellano (Stereo)"],
+            "subtitles": []
+          },
+          {
+            "id": "cw-3",
+            "title": "Blade Runner 2049",
+            "subtitle": "SMB Películas • Remux",
+            "progress_percent": 88,
+            "remaining_time": "12 min restantes",
+            "image": "https://images.unsplash.com/photo-1782020934325-cfe4cea4fd9c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTV8MHwxfHNlYXJjaHxffHxtb3ZpZSUyMHBvc3RlciUyMGRhcmslMjBjaW5lbWF0aWN8ZW58MHx8fHwxNzkwODQ5MzczfDA&ixlib=rb-4.1.0&q=85",
+            "file_path": "//192.168.1.200/Peliculas/BladeRunner2049.mkv",
+            "audio_tracks": ["Español (DTS-HD)", "English (TrueHD)"],
+            "subtitles": ["Español Completo", "Español Forzado", "English SDH"]
+          }
+        ]
+      },
+      "streaming_section": {
+        "title": "PLATAFORMAS DE STREAMING",
+        "items": ["Netflix", "Prime Video", "Disney+", "HBO Max", "Movistar+", "Apple TV+", "YouTube", "Twitch", "Filmin"]
+      },
+      "network_sources_section": {
+        "title": "RED LOCAL (192.168.1.200)",
+        "folders": [
+          { "name": "Películas", "icon": "film", "path": "smb://192.168.1.200/Peliculas", "count": "142 Títulos" },
+          { "name": "Series", "icon": "tv", "path": "smb://192.168.1.200/Series", "count": "38 Series" },
+          { "name": "Descargas", "icon": "download-cloud", "path": "smb://192.168.1.200/Descargas", "count": "8 Archivos en curso" }
+        ]
+      },
+      "arcade_coinops_section": {
+        "title": "JUEGOS Y EMULACIÓN",
+        "tile": {
+          "title": "CoinOps Arcade",
+          "subtitle": "Lanzador Retro • RetroArch Integration",
+          "image": "https://images.unsplash.com/photo-1706466615917-e44750d177d7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHxffHJldHJvJTIwYXJjYWRlJTIwZ2FtZSUyMHN5bnRod2F2ZXxlbnwwfHx8fDE3OTA4NDkzNzN8MA&ixlib=rb-4.1.0&q=85",
+          "badge": "RETRO ARCADE"
+        }
+      }
+    },
+    "video_player_screen": {
+      "features": [
+        "Full screen HTML5 video with glass OSD overlay auto-hiding after 4 seconds",
+        "Controls: Play/Pause, Rewind 10s, Forward 10s, Seekbar with thumbnail preview time",
+        "Aspect Ratio Selector: 4:3, 16:9, 21:9, Ajustar (Fit), Estirar (Stretch), Zoom",
+        "Subtitles Menu: Toggle ON/OFF + Track Selection (Español, English, Desactivado)",
+        "Audio Tracks Menu: Track selection with graceful fallback message if audio tracks are unavailable in browser stream ('Pista de audio única detectada / Integrada')"
+      ]
+    },
+    "network_browser_screen": {
+      "features": [
+        "Breadcrumb header showing path `//192.168.1.200/Peliculas`",
+        "Filter/Sort bar (Gamepad friendly tabs: Todos, Recientes, Favoritos)",
+        "Poster grid with 10-foot focused card details (Title, Year, Resolution badge, Audio info)",
+        "Quick Action modal on tile click: 'Reproducir con AlizceTV Player', 'Continuar reproducción', 'Marcar como visto'"
+      ]
+    }
+  },
+  "visual_enhancers": {
+    "aurora_background": {
+      "description": "Subtle animated CSS canvas / radial gradients with slow motion blur effect",
+      "implementation": "Animate 3 radial gradient blobs floating in slow CSS infinite keyframes with `filter: blur(100px)` overlayed with tiny CSS particle canvas or grain overlay."
+    },
+    "focus_highlight": {
+      "glow_color": "#00F0FF",
+      "scale": 1.08,
+      "border_width": "3px",
+      "shadow": "0 0 25px rgba(0, 240, 255, 0.5)"
+    }
+  },
+  "image_urls": {
+    "movie_posters": [
+      {
+        "url": "https://images.unsplash.com/photo-1778585040075-0991abfd4ed9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTV8MHwxfHNlYXJjaHwyfHxtb3ZpZSUyMHBvc3RlciUyMGRhcmslMjBjaW5lbWF0aWN8ZW58MHx8fHwxNzkwODQ5MzczfDA&ixlib=rb-4.1.0&q=85",
+        "category": "movie_poster",
+        "description": "Cinematic dark glass horror sci-fi poster"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1773592612185-bd985ac2bfe2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTV8MHwxfHNlYXJjaHwzfHxtb3ZpZSUyMHBvc3RlciUyMGRhcmslMjBjaW5lbWF0aWN8ZW58MHx8fHwxNzkwODQ5MzczfDA&ixlib=rb-4.1.0&q=85",
+        "category": "series_poster",
+        "description": "Dramatic glitter character poster"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1782020934325-cfe4cea4fd9c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTV8MHwxfHNlYXJjaHxffHxtb3ZpZSUyMHBvc3RlciUyMGRhcmslMjBjaW5lbWF0aWN8ZW58MHx8fHwxNzkwODQ5MzczfDA&ixlib=rb-4.1.0&q=85",
+        "category": "movie_poster",
+        "description": "Dark mood portrait movie poster"
+      }
+    ],
+    "arcade_synthwave": [
+      {
+        "url": "https://images.unsplash.com/photo-1706466615917-e44750d177d7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHxffHJldHJvJTIwYXJjYWRlJTIwZ2FtZSUyMHN5bnRod2F2ZXxlbnwwfHx8fDE3OTA4NDkzNzN8MA&ixlib=rb-4.1.0&q=85",
+        "category": "arcade_banner",
+        "description": "Synthwave sunset grid arcade banner for CoinOps"
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Load AZONIX font via @font-face or stylesheet injection in index.html / App.css. Apply 'font-title' utility or CSS variable to all main titles, headers, logo, and launcher titles.",
+    "Implement an active Focus Engine state (`focusedId` or `@FocusState` hook) with support for keyboard D-Pad (Arrow keys), Enter/Space (Confirm), Escape/Backspace (Back), and Gamepad API navigator polling (for 8BitDo Ultimate 2C d-pad/joystick).",
+    "Add visual on-screen Gamepad Overlay / Legend at bottom right (showing D-Pad [Navegar], A [Aceptar], B [Volver], Y [Ajustes]). Allow toggling simulated gamepad controls for mouse testing.",
+    "Create the dark animated aurora background with 3-4 blurred floating color gradient blobs + dark mesh overlay.",
+    "Ensure 10-foot TV viewability: High contrast, large legible typography, generous paddings, clear focus ring with cyan glow.",
+    "Support full Spanish language text across all menus ('Continuar Viendo', 'Plataformas', 'Red Local', 'CoinOps Arcade', 'Proporción de Aspecto', 'Subtítulos', 'Pistas de Audio').",
+    "Include full data-testid attributes on every tile, button, player control, and focusable element for automated testing."
+  ],
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "Avoid generic centered layouts and standard blue gradients. Use rich, layered glassmorphism with cyan/indigo neon ambient accents.",
+    "Focus state must be visually unmistakable from 3 meters away (1.08x scale + 3px cyan glow ring).",
+    "Do NOT use AI assistant emoji characters like 🤖, 🧠, 💡 for UI icons. Use Phosphor Icons or Lucide-react icons.",
+    "Ensure all interactive elements have explicit data-testid attributes (e.g., data-testid='tile-netflix', data-testid='btn-aspect-ratio')."
+  ]
+}

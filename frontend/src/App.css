@@ -1,0 +1,12 @@
+/* Component-level styles for AlizceTV */
+.App {
+  min-height: 100vh;
+  position: relative;
+  color: #e2e8f0;
+}
+
+.app-content {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+}
