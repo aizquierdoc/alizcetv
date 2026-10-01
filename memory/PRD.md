@@ -1,70 +1,87 @@
 # AlizceTV — PRD
 
-## Problem Statement (original)
-Aplicación tipo TV box para Windows 11 Home llamada **AlizceTV**. Debe permitir acceso unificado a plataformas de streaming, 3 directorios de red con archivos de vídeo (SMB a 192.168.1.200: Películas, Series, Descargas) y a CoinOps para jugar arcades. Compatible con pad 8BitDo Ultimate 2C y teclado para navegación tipo Smart TV (focus, no ratón). Diseño moderno dark, glassmorphism, aurora animada. Tipografía AZONIX. Reloj 24h con fecha arriba a la derecha. "Continuar viendo" con mini-capturas de los 3 últimos vídeos no terminados. Reproductor con selector de aspect ratio, subtítulos y pistas de audio (desactivadas si no están disponibles).
+## Problem Statement
+TV box app para Windows 11 Home llamada **AlizceTV**: acceso unificado a plataformas de streaming, 3 directorios de red SMB (192.168.1.200: Películas, Series, Descargas) y a CoinOps para arcades. Compatible con pad 8BitDo Ultimate 2C y teclado, navegación tipo Smart TV (focus, no ratón). Diseño dark glassmorphism con aurora animada, tipografía AZONIX. Reloj 24h con fecha arriba a la derecha. "Continuar viendo" con las últimas 3 reproducciones no terminadas. Reproductor con selector de aspect ratio, subtítulos y pistas de audio (desactivadas si no están disponibles).
 
 ## Target Platform
-- Prototipo web React (demo navegable).
-- Siguiente fase: empaquetado como app Windows 11 vía Electron o Tauri.
+- **Prototipo web React**: demo navegable en el navegador.
+- **AlizceTV.exe** (Windows 11): Electron 31 + NSIS installer, con integración SMB real (anónimo), MPV embebido (control IPC) y lanzamiento de CoinOps externo.
 
 ## User Choices
-- Entregable: Prototipo web interactivo navegable.
-- Streaming: Netflix, Prime Video, Disney+, HBO Max, Movistar+, Apple TV+, YouTube, Twitch, Filmin (lanzadores a web oficial).
-- Red local: 192.168.1.200 — carpetas Películas, Series, Descargas (simuladas con contenido ejemplo).
-- Fondo: Aurora oscura animada + partículas sutiles.
-- Pad: Gamepad API real + navegación por focus tipo Smart TV (no ratón).
+- Streaming: Netflix, Prime Video, Disney+, HBO Max, Movistar+, Apple TV+, YouTube, Twitch, Filmin (abren web oficial).
+- Red: 192.168.1.200 Guest / anónimo. Carpetas Peliculas, Series, Descargas.
+- CoinOps: ruta configurable desde Ajustes.
+- Reproductor: MPV embebido vía IPC.
+- Instalador: NSIS clásico con atajos escritorio + menú inicio.
 
 ## Architecture
-- Frontend: React 19 + React Router + Tailwind + Framer-free CSS animations + lucide-react.
-- Backend: FastAPI (sin cambios, placeholder; app actualmente 100% frontend).
-- Fuente: AZONIX (CDNFonts) + Outfit (Google Fonts) + JetBrains Mono.
-- Focus Engine: hook `useFocusEngine` con navegación espacial (nearest-rect por dirección), Keyboard (flechas / Enter / Esc) + Gamepad API polling (D-Pad, sticks, botones A/B).
-- Mock data en `/app/frontend/src/data/mockData.js`.
+```
+/app/
+├── frontend/           React 19 (renderer dentro de Electron también)
+│   ├── src/
+│   │   ├── pages/      Home, NetworkBrowser, VideoPlayer, Arcade, Settings
+│   │   ├── components/ TopBar, AuroraBackground, Focusable, GamepadLegend, …
+│   │   ├── hooks/      useFocusEngine (keyboard + Gamepad API spatial nav)
+│   │   ├── services/   alizceApi.js (abstracción Electron vs mock web)
+│   │   └── data/       mockData.js
+└── electron/           Capa Electron / Windows build
+    ├── src/
+    │   ├── main.js     Ventana, IPC: SMB, MPV, CoinOps, Settings, ContinueWatching
+    │   └── preload.js  contextBridge → window.alizce
+    ├── scripts/        copy-react.js (bundling React build)
+    ├── vendor/mpv/     mpv.exe (incluir manualmente antes del build)
+    ├── build/icon.ico  Icono (reemplazar con logo final)
+    └── package.json    electron-builder → NSIS + portable
+```
 
-## What's been implemented (2026-01-01)
-- Pantalla principal con:
-  - TopBar (logo AZONIX + estado de red SMB + reloj 24h con fecha en español).
-  - Sección "Continuar viendo" con 3 tiles y barra de progreso + tiempo restante.
-  - Grid de 9 plataformas de streaming (abre web oficial en nueva pestaña).
-  - Sección "Red Local" con 3 carpetas SMB (Películas / Series / Descargas).
-  - Tile hero "CoinOps Arcade" (banner synthwave).
-- Browser de carpetas con grid de pósters (año, resolución, barra de progreso en Descargas).
-- Reproductor de vídeo full-screen con:
-  - Vídeo HTML5 (demo Big Buck Bunny).
-  - OSD glass auto-hide 4.5s.
-  - Controles: Play/Pause, −10s, +10s, barra de progreso con tiempos.
-  - Selector de aspect ratio: 16:9, 4:3, 21:9, Ajustar, Estirar, Zoom.
-  - Menú de subtítulos con tracks por archivo + opción Desactivado + estado deshabilitado si no hay subs.
-  - Menú de audio con tracks por archivo + estado deshabilitado si solo hay 1 pista.
-- Pantalla Arcade con 8 juegos retro (Street Fighter II, Mortal Kombat, Marvel vs Capcom, Pac-Man, Metal Slug 3, KOF 98, Donkey Kong, Galaga).
-- Fondo aurora animada + partículas + grano SVG.
-- Glassmorphism con backdrop-blur en todos los paneles.
-- Focus ring cian con glow + escala 1.07 + outline-pulse (visible a 3m).
-- Scroll-into-view automático del tile enfocado (TV behaviour).
-- Leyenda de gamepad flotante abajo a la derecha.
-- data-testid en todos los elementos focalizables.
+## What's been implemented
+### 2026-01-01 — MVP demo web
+- Pantallas Home / NetworkBrowser / VideoPlayer / Arcade.
+- Aurora animada + partículas + grano SVG.
+- Focus Engine (keyboard + Gamepad API, navegación espacial).
+- Reloj 24h con fecha ES.
+- Continuar viendo con progreso.
+- 9 plataformas streaming (abren web oficial).
+- Reproductor con aspect ratio / subs / audio y estados deshabilitados.
+
+### 2026-01-01 — Capa Electron Windows
+- `electron/` completo con `main.js` + `preload.js` + `copy-react.js` + `package.json` para `electron-builder`.
+- Config NSIS: instalador `AlizceTV-Setup-1.0.0.exe` + portable, accesos directos escritorio y menú inicio.
+- IPC bridge `window.alizce` seguro con `contextIsolation: true`.
+- **SMB real**: `@marsaud/smb2` en modo Guest (sin credenciales). Lee shares configurados y navega subcarpetas.
+- **MPV embebido**: lanza mpv.exe en primer plano con `--input-ipc-server`, se conecta por named pipe `\\.\pipe\alizcetv-mpv`, controla play/pause/seek/aspect/sid/aid y observa time-pos / duration / track-list.
+- **CoinOps launcher**: `spawn(coinopsPath)` configurable desde Ajustes.
+- **Settings persistentes** en `%APPDATA%\AlizceTV\config.json` (electron-store).
+- **Continuar viendo persistente**: últimos 10 en disco.
+- **Pantalla Ajustes** (`/settings`) con pickers de archivo (Examinar) para CoinOps.exe y mpv.exe, inputs para host SMB y carpetas compartidas.
+- **Fallback gracioso**: cuando `window.alizce` no existe (navegador normal), el frontend usa mock data y muestra banner "modo demo".
+- README con instrucciones de build paso a paso para Windows.
+
+## How to build AlizceTV.exe
+1. En Windows, con Node 18+ y Yarn:
+   ```powershell
+   cd frontend && yarn install
+   cd ..\electron && npm install
+   # Descargar mpv.exe y copiarlo a electron/vendor/mpv/mpv.exe
+   npm run dist
+   ```
+2. Resultado: `electron/dist/AlizceTV-Setup-1.0.0.exe`
 
 ## Prioritized backlog
-### P0 (si se decide empaquetar como app Windows)
-- Empaquetado Electron o Tauri con integración SMB real vía biblioteca nativa.
-- Lanzamiento de ejecutable CoinOps externo (`child_process.spawn`).
-- Lanzamiento de apps nativas de streaming (deep link / UWP launch).
-- Guardado persistente del progreso de "Continuar viendo" (LocalStorage / archivo).
-
 ### P1
-- Captura automática de miniaturas (ffmpeg) de los últimos vídeos reproducidos.
-- Soporte real de pistas de subtítulos y audio múltiples con ffmpeg / shaka-player / vidstack.
+- Deep links a apps nativas de streaming instaladas (Netflix UWP, Prime, etc.).
+- Captura automática de miniatura real de los vídeos en progreso (via ffmpeg).
 - Buscador global por título.
-- Favoritos y recientemente añadido.
 - Modo "noche" (brillo reducido) + salvapantallas.
+- Metadatos TMDB (pósters, sinopsis) con caché local.
 
 ### P2
-- Perfiles de usuario.
+- Perfiles de usuario con progreso independiente.
 - Trailers (YouTube) al enfocar un título.
-- Integración con TMDB/OMDb para metadatos y pósters reales.
 - Sincronización de progreso entre dispositivos.
+- Autodetección mDNS del host SMB.
+- Scanning indexado de la red (SQLite) para búsquedas rápidas.
 
 ## Notes
-- La integración SMB real NO está implementada: los directorios aparecen simulados con contenido ejemplo (requiere Electron/Tauri).
-- Los lanzadores de streaming abren la **web oficial** en una nueva pestaña. Las apps nativas se lanzarán con deep links cuando se empaquete.
-- CoinOps está representado como pantalla de selección arcade (demo); el lanzamiento real requerirá llamada a ejecutable externo.
+- MPV se superpone fullscreen "ontop" sobre AlizceTV y se controla por IPC (no es embedding puro con `--wid=`, pero la UX se siente integrada; al cerrar MPV, el foco vuelve a AlizceTV).
+- Los lanzadores de streaming abren la web oficial en el navegador por defecto (shell.openExternal). Para apps UWP nativas se necesita integración por `start ms-xbox-netflix://` o similar — queda en backlog P1.

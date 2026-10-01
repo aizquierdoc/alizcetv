@@ -1,0 +1,63 @@
+{
+  "name": "alizcetv",
+  "version": "1.0.0",
+  "description": "AlizceTV — Living Room Edition for Windows 11",
+  "author": "AlizceTV",
+  "main": "src/main.js",
+  "private": true,
+  "scripts": {
+    "build-react": "cd ../frontend && yarn build",
+    "copy-react": "node scripts/copy-react.js",
+    "prepare-dist": "npm run build-react && npm run copy-react",
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "pack": "electron-builder --dir",
+    "dist": "npm run prepare-dist && electron-builder --win nsis",
+    "dist-portable": "npm run prepare-dist && electron-builder --win portable"
+  },
+  "dependencies": {
+    "@marsaud/smb2": "^0.19.0",
+    "electron-store": "^8.2.0"
+  },
+  "devDependencies": {
+    "electron": "^31.3.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.alizcetv.app",
+    "productName": "AlizceTV",
+    "artifactName": "${productName}-Setup-${version}.${ext}",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "renderer/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "vendor/mpv",
+        "to": "mpv",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AlizceTV",
+      "perMachine": false
+    }
+  }
+}

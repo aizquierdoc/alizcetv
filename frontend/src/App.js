@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import NetworkBrowser from "./pages/NetworkBrowser";
 import VideoPlayer from "./pages/VideoPlayer";
 import Arcade from "./pages/Arcade";
+import Settings from "./pages/Settings";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
             <Route path="/folder/:folderId" element={<NetworkBrowser />} />
             <Route path="/player" element={<VideoPlayer />} />
             <Route path="/arcade" element={<Arcade />} />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </BrowserRouter>
       </div>

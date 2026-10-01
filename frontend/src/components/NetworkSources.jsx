@@ -1,11 +1,35 @@
-import React from "react";
-import { Film, Tv, DownloadCloud, HardDrive } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Film, Tv, DownloadCloud, HardDrive, Folder } from "lucide-react";
 import Focusable from "./Focusable";
-import { networkFolders } from "../data/mockData";
+import { smbService, isElectron } from "../services/alizceApi";
 
-const ICONS = { film: Film, tv: Tv, download: DownloadCloud };
+const ICONS = { Peliculas: Film, Series: Tv, Descargas: DownloadCloud };
+const COVERS = {
+  Peliculas: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?crop=entropy&cs=srgb&fm=jpg&w=800&q=85",
+  Series:    "https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?crop=entropy&cs=srgb&fm=jpg&w=800&q=85",
+  Descargas: "https://images.unsplash.com/photo-1518676590629-3dcba9c5a555?crop=entropy&cs=srgb&fm=jpg&w=800&q=85",
+};
 
 export default function NetworkSources({ onOpenFolder }) {
+  const [shares, setShares] = useState([]);
+
+  useEffect(() => {
+    smbService.listShares().then((list) => {
+      // Normalize: pick icon + cover by share name
+      const normalized = list.map((s) => {
+        const base = s.name || s.share;
+        const Icon = ICONS[base] || Folder;
+        return {
+          ...s,
+          icon: Icon,
+          cover: s.cover || COVERS[base] || COVERS.Peliculas,
+          count: s.count || (isElectron ? "Pulsa para explorar" : "— ítems"),
+        };
+      });
+      setShares(normalized);
+    });
+  }, []);
+
   return (
     <section className="mt-16" data-testid="section-network">
       <div className="flex items-baseline justify-between mb-5">
@@ -14,13 +38,13 @@ export default function NetworkSources({ onOpenFolder }) {
           Red local
         </h2>
         <span className="text-xs tracking-[0.3em] uppercase text-slate-500 font-mono flex items-center gap-2">
-          <HardDrive size={12} /> //192.168.1.200
+          <HardDrive size={12} /> SMB · {isElectron ? "en vivo" : "demo"}
         </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-        {networkFolders.map((f) => {
-          const Icon = ICONS[f.icon] || Film;
+        {shares.map((f) => {
+          const Icon = f.icon;
           return (
             <Focusable
               key={f.id}

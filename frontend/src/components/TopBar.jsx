@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Wifi, Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const MONTHS = [
@@ -12,6 +13,7 @@ function pad(n) {
 }
 
 export default function TopBar() {
+  const navigate = useNavigate();
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -77,6 +79,7 @@ export default function TopBar() {
           className="w-11 h-11 rounded-xl glass flex items-center justify-center text-slate-300 hover:text-white"
           data-testid="btn-settings"
           aria-label="Ajustes"
+          onClick={() => navigate("/settings")}
         >
           <Settings size={18} />
         </button>

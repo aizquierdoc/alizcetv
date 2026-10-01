@@ -7,6 +7,7 @@ import NetworkSources from "../components/NetworkSources";
 import ArcadeTile from "../components/ArcadeTile";
 import GamepadLegend from "../components/GamepadLegend";
 import { useFocusEngine } from "../hooks/useFocusEngine";
+import { coinopsService, isElectron } from "../services/alizceApi";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -21,10 +22,16 @@ export default function Home() {
     navigate("/player", { state: { item } });
   };
   const openFolder = (folder) => {
-    navigate(`/folder/${folder.id}`);
+    navigate(`/folder/${folder.id}`, { state: { share: folder.share || folder.name } });
   };
-  const launchArcade = () => {
-    navigate("/arcade");
+  const launchArcade = async () => {
+    if (isElectron) {
+      // Try native CoinOps.exe launch; if not configured, open browser as fallback
+      const ok = await coinopsService.launch();
+      if (!ok) navigate("/arcade");
+    } else {
+      navigate("/arcade");
+    }
   };
 
   return (
