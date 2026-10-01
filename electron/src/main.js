@@ -37,7 +37,6 @@ let mpvRequestId = 1;
 const mpvPending = new Map();
 
 // TMDB client (initialized on app ready, re-keyed when user changes API key)
-const userDataDir = app.getPath ? null : null; // placeholder — set in whenReady
 let tmdb = null;
 let scanRunning = false;
 

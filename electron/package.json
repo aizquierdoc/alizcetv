@@ -16,7 +16,7 @@
     "dist-portable": "npm run prepare-dist && electron-builder --win portable"
   },
   "dependencies": {
-    "@marsaud/smb2": "^0.19.0",
+    "@marsaud/smb2": "^0.18.0",
     "electron-store": "^8.2.0"
   },
   "devDependencies": {

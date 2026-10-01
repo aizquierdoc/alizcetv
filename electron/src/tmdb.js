@@ -52,14 +52,18 @@ function parseFilename(filename) {
     };
   }
 
-  // Movie with year: Title 2024 or Title (2024)
-  m = cleaned.match(/^(.*?)[\s(]+(19|20)(\d{2})\b/);
-  if (m) {
-    return {
-      type: "movie",
-      title: m[1].trim(),
-      year: parseInt(`${m[2]}${m[3]}`, 10),
-    };
+  // Movie with year: use the LAST year that appears (handles titles containing
+  // numbers like "Blade Runner 2049 (2017)" where 2017 is the real release year).
+  const yearMatches = [...cleaned.matchAll(/\b(19\d{2}|20\d{2})\b/g)];
+  if (yearMatches.length) {
+    const last = yearMatches[yearMatches.length - 1];
+    const year = parseInt(last[1], 10);
+    // Only trust years up to current year + 2
+    const now = new Date().getFullYear();
+    if (year <= now + 2) {
+      const title = cleaned.slice(0, last.index).trim().replace(/[(\[]$/, "").trim();
+      return { type: "movie", title: title || cleaned, year };
+    }
   }
 
   // Fallback: assume movie, no year
@@ -160,15 +164,24 @@ class TmdbClient {
   }
 
   async searchWithFallback(type, title, year) {
-    // Try es-ES first, then en-US
-    const common = { query: title, include_adult: "false" };
-    if (year && type === "movie") common.year = String(year);
-    if (year && type === "tv") common.first_air_date_year = String(year);
-    let res = await this.request(`/search/${type}`, { ...common, language: "es-ES" });
-    if (!res.results?.length) {
-      res = await this.request(`/search/${type}`, { ...common, language: "en-US" });
+    // Try es-ES first (with year), then without year, then en-US.
+    const base = { query: title, include_adult: "false" };
+    const withYear = { ...base };
+    if (year && type === "movie") withYear.year = String(year);
+    if (year && type === "tv") withYear.first_air_date_year = String(year);
+
+    let res = await this.request(`/search/${type}`, { ...withYear, language: "es-ES" });
+    if (res.results?.length) return res;
+
+    if (year) {
+      res = await this.request(`/search/${type}`, { ...base, language: "es-ES" });
+      if (res.results?.length) return res;
     }
-    return res;
+
+    res = await this.request(`/search/${type}`, { ...withYear, language: "en-US" });
+    if (res.results?.length) return res;
+
+    return await this.request(`/search/${type}`, { ...base, language: "en-US" });
   }
 
   async getDetails(type, id) {

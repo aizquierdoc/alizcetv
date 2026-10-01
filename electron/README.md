@@ -15,7 +15,24 @@ reproductor MPV embebido y lanzador para CoinOps.
 
 ## Compilar paso a paso
 
-Desde una terminal en la raíz del proyecto (`/app` o donde lo tengas en Windows):
+### Opción A — Automático (recomendado)
+
+Un único comando lo hace todo: descarga mpv.exe, instala dependencias, compila el instalador.
+
+```powershell
+# Primera vez, autoriza scripts en esta sesion:
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+# Desde la raiz del proyecto:
+.\electron\build-windows.ps1
+```
+
+Requisitos previos: **Node.js 18+** y **Yarn**. Si prefieres descargar mpv a mano,
+copia `mpv.exe` a `electron\vendor\mpv\mpv.exe` antes de ejecutar el script.
+
+### Opción B — Paso a paso manual
+
+Desde una terminal en la raíz del proyecto:
 
 ```powershell
 # 1. Instalar dependencias React
