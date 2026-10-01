@@ -1,6 +1,6 @@
 import React from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import AuroraBackground from "./components/AuroraBackground";
 import Home from "./pages/Home";
 import NetworkBrowser from "./pages/NetworkBrowser";
@@ -13,7 +13,7 @@ function App() {
     <div className="App">
       <AuroraBackground />
       <div className="app-content">
-        <BrowserRouter>
+        <HashRouter>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/folder/:folderId" element={<NetworkBrowser />} />
@@ -21,7 +21,7 @@ function App() {
             <Route path="/arcade" element={<Arcade />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
-        </BrowserRouter>
+        </HashRouter>
       </div>
     </div>
   );
