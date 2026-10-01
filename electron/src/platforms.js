@@ -30,6 +30,7 @@ module.exports = {
     protocol: null,            // No UWP on Windows (Max discontinued it)
     hasUwp: false,
     defaultMode: "cinema",
+    forceElectronCinema: true, // Ventana frameless Electron (sin barra, Escape cierra)
   },
   movistar: {
     label: "Movistar+",

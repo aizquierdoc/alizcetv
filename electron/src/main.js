@@ -668,7 +668,10 @@ ipcMain.handle("platform:launch", async (_e, id) => {
       return { ok: true, mode };
     }
     // cinema
-    openCinema(def.web, def.label, { withYtDlp: id === "youtube" });
+    openCinema(def.web, def.label, {
+      withYtDlp: id === "youtube",
+      forceElectron: !!def.forceElectronCinema,
+    });
     return { ok: true, mode };
   } catch (e) {
     return { error: e.message };
