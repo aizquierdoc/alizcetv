@@ -57,8 +57,8 @@ export default function TopBar() {
           className="w-14 h-14 drop-shadow-[0_0_16px_rgba(56,189,248,0.55)]"
         />
         <div>
-          <h1 className="font-title text-3xl lg:text-4xl logo-gradient leading-none">
-            ALIZCE<span className="opacity-80">TV</span>
+          <h1 className="font-title text-3xl lg:text-4xl logo-gradient leading-none whitespace-nowrap">
+            ALIZCETV
           </h1>
           <p className="text-[11px] tracking-[0.35em] uppercase text-slate-400 mt-1 font-mono">
             Living Room Edition

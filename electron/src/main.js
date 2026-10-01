@@ -454,7 +454,43 @@ ipcMain.handle("shell:open", async (_e, p) => shell.openPath(p));
 // ---------- Streaming platform launcher ----------
 let cinemaWindow = null;
 
+function resolveEdgePath() {
+  const candidates = [
+    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+    "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+  ];
+  for (const p of candidates) { if (fs.existsSync(p)) return p; }
+  return null;
+}
+
+function openCinemaEdge(url, label) {
+  const edge = resolveEdgePath();
+  if (!edge) return false;
+  // --app runs Edge in app mode (no browser UI) with the user's default profile
+  // (uBlock Origin, SponsorBlock and other Edge extensions remain active).
+  // --start-fullscreen opens fullscreen on the primary display.
+  const args = [
+    `--app=${url}`,
+    "--start-fullscreen",
+    "--no-first-run",
+    "--no-default-browser-check",
+  ];
+  try {
+    spawn(edge, args, { detached: true, stdio: "ignore" }).unref();
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 function openCinema(url, label, options = {}) {
+  // Prefer Microsoft Edge in app-fullscreen mode on Windows so user keeps
+  // their installed extensions (uBlock, SponsorBlock, downloaders…).
+  if (process.platform === "win32" && !options.forceElectron) {
+    if (openCinemaEdge(url, label)) return;
+  }
+
+  // Fallback: Electron BrowserWindow with built-in adblocker.
   if (cinemaWindow) { try { cinemaWindow.close(); } catch (_) {} cinemaWindow = null; }
   const partition = `persist:cinema-${label.toLowerCase().replace(/\s/g, "-")}`;
   const sess = session.fromPartition(partition);
@@ -476,17 +512,14 @@ function openCinema(url, label, options = {}) {
   cinemaWindow.loadURL(url, { userAgent:
     "Mozilla/5.0 (SMART-TV; Linux; Tizen 6.5) AppleWebKit/537.36 (KHTML, like Gecko) 85.0.4183.93/6.5 TV Safari/537.36"
   });
-
   cinemaWindow.webContents.on("before-input-event", (event, input) => {
     if (input.type === "keyDown" && (input.key === "Escape" || input.key === "Backspace")) {
       try { cinemaWindow.close(); } catch (_) {}
     }
   });
-
   if (options.withYtDlp) {
     cinemaWindow.webContents.on("did-finish-load", () => injectYtDlpOverlay());
   }
-
   cinemaWindow.on("closed", () => { cinemaWindow = null; mainWindow?.focus(); });
 }
 
