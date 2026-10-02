@@ -1,4 +1,5 @@
 // Mock data for AlizceTV prototype
+// Todas las imagenes se sirven desde /public/mock/ (locales, sin Unsplash).
 
 export const continueWatching = [
   {
@@ -7,8 +8,7 @@ export const continueWatching = [
     subtitle: "SMB Películas · 1080p",
     progress: 68,
     remaining: "38 min restantes",
-    image:
-      "https://images.unsplash.com/photo-1778585040075-0991abfd4ed9?crop=entropy&cs=srgb&fm=jpg&w=800&q=85",
+    image: "./mock/cw-dune.jpg",
     path: "//192.168.1.200/Peliculas/Dune.Parte.Dos.2024.mkv",
     audio: ["Español (5.1 Dolby)", "English (Atmos)"],
     subs: ["Español (SRT)", "English (Forced)"],
@@ -19,8 +19,7 @@ export const continueWatching = [
     subtitle: "SMB Series · 4K HDR",
     progress: 42,
     remaining: "24 min restantes",
-    image:
-      "https://images.unsplash.com/photo-1773592612185-bd985ac2bfe2?crop=entropy&cs=srgb&fm=jpg&w=800&q=85",
+    image: "./mock/cw-tlou.jpg",
     path: "//192.168.1.200/Series/TLOU/S01E05.mkv",
     audio: ["Español Castellano (Stereo)"],
     subs: [],
@@ -31,8 +30,7 @@ export const continueWatching = [
     subtitle: "SMB Películas · Remux",
     progress: 88,
     remaining: "12 min restantes",
-    image:
-      "https://images.unsplash.com/photo-1782020934325-cfe4cea4fd9c?crop=entropy&cs=srgb&fm=jpg&w=800&q=85",
+    image: "./mock/cw-bladerunner.jpg",
     path: "//192.168.1.200/Peliculas/BladeRunner2049.mkv",
     audio: ["Español (DTS-HD)", "English (TrueHD)"],
     subs: ["Español Completo", "Español Forzado", "English SDH"],
@@ -58,8 +56,7 @@ export const networkFolders = [
     icon: "film",
     path: "smb://192.168.1.200/Peliculas",
     count: "142 Títulos",
-    cover:
-      "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?crop=entropy&cs=srgb&fm=jpg&w=800&q=85",
+    cover: "./mock/net-peliculas.jpg",
   },
   {
     id: "net-series",
@@ -67,8 +64,7 @@ export const networkFolders = [
     icon: "tv",
     path: "smb://192.168.1.200/Series",
     count: "38 Series",
-    cover:
-      "https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?crop=entropy&cs=srgb&fm=jpg&w=800&q=85",
+    cover: "./mock/net-series.jpg",
   },
   {
     id: "net-descargas",
@@ -76,19 +72,18 @@ export const networkFolders = [
     icon: "download",
     path: "smb://192.168.1.200/Descargas",
     count: "8 Archivos en curso",
-    cover:
-      "https://images.unsplash.com/photo-1518676590629-3dcba9c5a555?crop=entropy&cs=srgb&fm=jpg&w=800&q=85",
+    cover: "./mock/net-descargas.jpg",
   },
 ];
 
 // Sample video content inside each folder
 const samplePosters = [
-  "https://images.unsplash.com/photo-1478720568477-152d9b164e26?crop=entropy&cs=srgb&fm=jpg&w=600&q=85",
-  "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?crop=entropy&cs=srgb&fm=jpg&w=600&q=85",
-  "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?crop=entropy&cs=srgb&fm=jpg&w=600&q=85",
-  "https://images.unsplash.com/photo-1485846234645-a62644f84728?crop=entropy&cs=srgb&fm=jpg&w=600&q=85",
-  "https://images.unsplash.com/photo-1536440136628-849c177e76a1?crop=entropy&cs=srgb&fm=jpg&w=600&q=85",
-  "https://images.unsplash.com/photo-1542204165-65bf26472b9b?crop=entropy&cs=srgb&fm=jpg&w=600&q=85",
+  "./mock/poster-1.jpg",
+  "./mock/poster-2.jpg",
+  "./mock/poster-3.jpg",
+  "./mock/poster-4.jpg",
+  "./mock/poster-5.jpg",
+  "./mock/poster-6.jpg",
 ];
 
 export const folderContents = {
@@ -135,6 +130,5 @@ export const arcadeTile = {
   title: "CoinOps Arcade",
   subtitle: "Lanzador Retro · RetroArch Integration",
   badge: "RETRO ARCADE",
-  image:
-    "https://images.unsplash.com/photo-1706466615917-e44750d177d7?crop=entropy&cs=srgb&fm=jpg&w=1200&q=85",
+  image: "./mock/arcade.jpg",
 };

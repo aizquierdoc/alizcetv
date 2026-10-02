@@ -5,9 +5,9 @@ import { smbService, isElectron } from "../services/alizceApi";
 
 const ICONS = { Peliculas: Film, Series: Tv, Descargas: DownloadCloud };
 const COVERS = {
-  Peliculas: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?crop=entropy&cs=srgb&fm=jpg&w=800&q=85",
-  Series:    "https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?crop=entropy&cs=srgb&fm=jpg&w=800&q=85",
-  Descargas: "https://images.unsplash.com/photo-1518676590629-3dcba9c5a555?crop=entropy&cs=srgb&fm=jpg&w=800&q=85",
+  Peliculas: "./mock/net-peliculas.jpg",
+  Series:    "./mock/net-series.jpg",
+  Descargas: "./mock/net-descargas.jpg",
 };
 
 export default function NetworkSources({ onOpenFolder }) {
