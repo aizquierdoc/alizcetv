@@ -487,7 +487,7 @@ ipcMain.handle("shell:open", async (_e, p) => shell.openPath(p));
 
 // ---------- Streaming platform launcher ----------
 let cinemaWindow = null;
-let edgeCinemaProc = null; // tracked Edge --kiosk child process
+let edgeCinemaProc = null; // tracked Edge --app (fullscreen) child process
 let cinemaEscapeRegistered = false;
 
 function resolveEdgePath() {
@@ -532,18 +532,28 @@ function closeAnyCinema() {
   }
 }
 
+// Directorio del perfil de Edge propio de AlizceTV (separado del Edge normal).
+// La extensión (uBlock Origin Lite) se instala UNA vez en este perfil y persiste,
+// igual que el login de YouTube. Ver electron/README.md -> "Perfil de Edge".
+function edgeCinemaProfileDir() {
+  return path.join(app.getPath("userData"), "edge-cinema-profile");
+}
+
 function openCinemaEdge(url, label) {
   const edge = resolveEdgePath();
   if (!edge) return false;
-  // --kiosk + --edge-kiosk-type=fullscreen = fully locked fullscreen app:
-  // no title bar, no close/minimize buttons, no way out via UI.
-  // Uses the user's default Edge profile so extensions (uBlock, SponsorBlock,
-  // etc.) stay active. Escape is intercepted via globalShortcut (closes
-  // the whole Edge process). Gamepad Y is handled from the renderer.
+  // OJO: `--kiosk --edge-kiosk-type=fullscreen` abre Edge en una sesión InPrivate
+  // y Microsoft documenta que las extensiones no funcionan en modo kiosco, así
+  // que uBlock nunca se aplicaba. En su lugar usamos una ventana --app (sin barra
+  // de título, pestañas ni direcciones) a pantalla completa, que sí carga las
+  // extensiones del perfil.
+  // --user-data-dir: perfil propio -> proceso de Edge independiente (aunque haya
+  // otro Edge abierto), así podemos seguirlo y cerrarlo con Escape sin tocar el
+  // Edge normal del usuario.
   const args = [
-    `--kiosk`,
-    url,
-    `--edge-kiosk-type=fullscreen`,
+    `--user-data-dir=${edgeCinemaProfileDir()}`,
+    `--app=${url}`,
+    "--start-fullscreen",
     "--no-first-run",
     "--no-default-browser-check",
   ];

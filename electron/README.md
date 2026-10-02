@@ -143,3 +143,21 @@ El `main.js` expone estas APIs a React vía `window.alizce`:
 
 Cuando la app corre en navegador normal (no Electron), `window.alizce` es `undefined`
 y el frontend cae automáticamente al modo demo con datos mock.
+
+## Perfil de Edge (YouTube y demás plataformas "cinema")
+
+Las plataformas en modo *cinema* se abren en Microsoft Edge a pantalla completa
+(`--app` + `--start-fullscreen`) con un **perfil propio** de AlizceTV. Esto es
+necesario para que funcionen las extensiones: el modo `--kiosk
+--edge-kiosk-type=fullscreen` de Edge es InPrivate y no admite extensiones.
+
+Configuración única (el perfil guarda extensiones y login de YouTube):
+
+1. Cierra AlizceTV y ejecuta (PowerShell):
+   `& "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --user-data-dir="$env:APPDATA\<nombre-de-la-app>\edge-cinema-profile"`
+   (`<nombre-de-la-app>` es la carpeta de datos de la app en `%APPDATA%`).
+2. En esa ventana instala **uBlock Origin Lite** desde Edge Add-ons
+   (uBlock Origin clásico es Manifest V2, que Edge está desactivando desde ago-2026).
+3. Cierra esa ventana. A partir de ahí AlizceTV abre YouTube con la extensión activa.
+
+Escape sigue cerrando la ventana de Edge.
