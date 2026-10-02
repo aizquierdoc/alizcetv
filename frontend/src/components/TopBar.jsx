@@ -52,7 +52,7 @@ export default function TopBar() {
       {/* Logo */}
       <div className="flex items-center gap-4" data-testid="brand-logo">
         <img
-          src="/logo.svg"
+          src="./logo.svg"
           alt="AlizceTV"
           className="w-14 h-14 drop-shadow-[0_0_16px_rgba(56,189,248,0.55)]"
         />
