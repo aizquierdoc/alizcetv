@@ -90,3 +90,11 @@ electron/node_modules/electron/dist/electron
 credentials.json
 *.key
 .credentials
+# Binarios vendored (se descargan en build, no se versionan)
+electron/vendor/mpv/mpv.exe
+electron/vendor/ytdlp/yt-dlp.exe
+electron/vendor/**/*.exe
+electron/vendor/**/*.zip
+
+# Parches temporales
+*.patch

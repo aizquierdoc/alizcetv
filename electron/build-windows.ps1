@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # AlizceTV - Build Windows installer (one-shot script)
 # =============================================================================
 # Uso:
@@ -14,7 +14,7 @@
 #   - Abre la carpeta con el instalador cuando termina
 # =============================================================================
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 # Resolve project root (parent of /electron directory)
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path

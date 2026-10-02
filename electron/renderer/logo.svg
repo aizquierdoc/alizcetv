@@ -14,67 +14,46 @@
       <stop offset="0.6" stop-color="#818cf8"/>
       <stop offset="1" stop-color="#a855f7"/>
     </linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.4" r="0.6">
-      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.55"/>
-      <stop offset="0.6" stop-color="#4f46e5" stop-opacity="0.2"/>
+    <radialGradient id="glow" cx="0.5" cy="0.45" r="0.6">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.5"/>
       <stop offset="1" stop-color="#000000" stop-opacity="0"/>
     </radialGradient>
-    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="3"/>
-    </filter>
     <filter id="aura" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="12"/>
+      <feGaussianBlur stdDeviation="10"/>
     </filter>
   </defs>
 
   <!-- Dark rounded square background -->
   <rect x="0" y="0" width="256" height="256" rx="56" ry="56" fill="url(#bg)"/>
 
-  <!-- Aurora glow in the middle -->
-  <ellipse cx="128" cy="110" rx="150" ry="110" fill="url(#glow)"/>
+  <!-- Soft glow -->
+  <ellipse cx="128" cy="118" rx="140" ry="100" fill="url(#glow)"/>
 
-  <!-- Scanlines (subtle TV motif) -->
-  <g opacity="0.08" fill="#ffffff">
-    <rect x="24" y="52"  width="208" height="1"/>
-    <rect x="24" y="80"  width="208" height="1"/>
-    <rect x="24" y="108" width="208" height="1"/>
-    <rect x="24" y="136" width="208" height="1"/>
-    <rect x="24" y="164" width="208" height="1"/>
-    <rect x="24" y="192" width="208" height="1"/>
-  </g>
+  <!-- Thin accent border -->
+  <rect x="6" y="6" width="244" height="244" rx="50" ry="50" fill="none"
+        stroke="url(#stroke)" stroke-opacity="0.4" stroke-width="2"/>
 
-  <!-- Thin border -->
-  <rect x="4" y="4" width="248" height="248" rx="52" ry="52" fill="none"
-        stroke="url(#stroke)" stroke-opacity="0.35" stroke-width="2"/>
-
-  <!-- Soft outer blur duplicate of the A letter for glow -->
-  <g filter="url(#aura)" opacity="0.75">
-    <path d="M 70 196 L 128 56 L 186 196 L 160 196 L 148 164 L 108 164 L 96 196 Z
-             M 116 142 L 140 142 L 128 110 Z"
+  <!-- Glow duplicate of the A -->
+  <g filter="url(#aura)" opacity="0.9">
+    <path d="M 68 198 L 128 44 L 188 198 L 160 198 L 148 164 L 108 164 L 96 198 Z
+             M 116 138 L 140 138 L 128 100 Z"
           fill="#22d3ee"/>
   </g>
 
   <!-- Main A monogram -->
-  <path d="M 70 196 L 128 56 L 186 196 L 160 196 L 148 164 L 108 164 L 96 196 Z
-           M 116 142 L 140 142 L 128 110 Z"
+  <path d="M 68 198 L 128 44 L 188 198 L 160 198 L 148 164 L 108 164 L 96 198 Z
+           M 116 138 L 140 138 L 128 100 Z"
         fill="url(#aFill)"/>
 
-  <!-- Center scan line crossing the A -->
-  <rect x="34" y="140" width="188" height="2" fill="#22d3ee" opacity="0.55"/>
-  <rect x="34" y="140" width="188" height="2" fill="#22d3ee" opacity="0.3" filter="url(#soft)"/>
+  <!-- Horizontal signal line across the A -->
+  <rect x="60" y="150" width="136" height="3" rx="1.5" fill="#22d3ee" opacity="0.75"/>
 
-  <!-- Small TV eyebrow label -->
-  <g>
-    <rect x="104" y="212" width="48" height="18" rx="4" ry="4"
-          fill="none" stroke="#22d3ee" stroke-opacity="0.65" stroke-width="1.2"/>
-    <text x="128" y="226" text-anchor="middle"
-          font-family="'Courier New', monospace" font-size="11"
+  <!-- Minimal "TV" eyebrow label -->
+  <g transform="translate(128, 220)">
+    <rect x="-22" y="0" width="44" height="20" rx="4" ry="4"
+          fill="none" stroke="#22d3ee" stroke-opacity="0.7" stroke-width="1.5"/>
+    <text x="0" y="14" text-anchor="middle"
+          font-family="'Courier New', monospace" font-size="12" font-weight="700"
           fill="#67e8f9" letter-spacing="4">TV</text>
   </g>
-
-  <!-- Corner dots -->
-  <circle cx="22" cy="22" r="2" fill="#67e8f9"/>
-  <circle cx="234" cy="22" r="2" fill="#c084fc"/>
-  <circle cx="22" cy="234" r="2" fill="#c084fc"/>
-  <circle cx="234" cy="234" r="2" fill="#67e8f9"/>
 </svg>
