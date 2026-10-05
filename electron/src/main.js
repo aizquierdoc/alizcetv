@@ -29,12 +29,12 @@ const store = new Store({
     platformModes: {},
     tmdbApiKey: "",
     lastScanAt: null,
-    buttonMap: null,  // user-configured gamepad buttons; null => defaults
-    iptvSources: [],  // array of { id, name, type: 'm3u'|'xtream', url?, host?, user?, pass? }
-    iptvCache: {},    // sourceId -> { fetchedAt, channels: [...] }
-    coinopsBoost: true, // minimize AlizceTV + set CoinOps high priority
-    youtubeDownloads: "", // output dir for yt-dlp
-    adBlock: true,    // enable Youtube/HBO cinema ad blocking
+    buttonMap: null,
+    iptvSources: [],
+    iptvCache: {},
+    coinopsBoost: true,
+    youtubeDownloads: "",
+    adBlock: true,
   },
 });
 
@@ -44,7 +44,6 @@ let mpvIpcSocket = null;
 let mpvRequestId = 1;
 const mpvPending = new Map();
 
-// TMDB client (initialized on app ready, re-keyed when user changes API key)
 let tmdb = null;
 let scanRunning = false;
 
@@ -87,18 +86,15 @@ function createWindow() {
     return { action: "deny" };
   });
 
-  // Disable Alt+F4 and other exit shortcuts — exit only via in-app button
   mainWindow.on("close", (e) => {
     if (!app.isQuitting) { e.preventDefault(); mainWindow.minimize(); }
   });
 }
 
 app.whenReady().then(() => {
-  // Initialize TMDB client with user cache dir
   const cacheDir = path.join(app.getPath("userData"));
   tmdb = new TmdbClient({ apiKey: store.get("tmdbApiKey") || "", cacheDir });
 
-  // Custom protocol to serve locally cached TMDB posters securely
   protocol.registerFileProtocol("alizceposter", (request, callback) => {
     const url = request.url.replace(/^alizceposter:\/\//, "");
     const safe = url.replace(/[^a-z0-9._-]/gi, "_");
@@ -119,7 +115,6 @@ app.on("before-quit", () => { app.isQuitting = true; try { globalShortcut.unregi
 ipcMain.handle("system:minimize", () => { mainWindow?.minimize(); return { ok: true }; });
 ipcMain.handle("system:close", () => { app.isQuitting = true; app.quit(); return { ok: true }; });
 ipcMain.handle("system:shutdown", () => {
-  // Shutdown Windows: shutdown /s /t 5 (5 second delay to allow abort via shutdown /a)
   if (process.platform === "win32") {
     spawn("shutdown", ["/s", "/t", "5", "/c", "AlizceTV: apagando el equipo"], { detached: true, stdio: "ignore" }).unref();
   }
@@ -182,7 +177,6 @@ ipcMain.handle("smb:listFolder", async (_e, { share, folder }) => {
       const items = (files || []).map((name) => {
         const isVideo = /\.(mkv|mp4|avi|mov|m4v|wmv|ts|webm)$/i.test(name);
         const base = { name, path: folder ? `${folder}\\${name}` : name, isVideo };
-        // Attach TMDB metadata if cached
         if (isVideo && tmdb) {
           const cached = tmdb.getCached(name);
           if (cached && !cached.notFound && !cached.error) {
@@ -220,7 +214,7 @@ ipcMain.handle("cw:upsert", (_e, entry) => {
   return trimmed;
 });
 
-// ---------- CoinOps launcher (with resource boost for N100) ----------
+// ---------- CoinOps launcher ----------
 ipcMain.handle("coinops:launch", async () => {
   const exe = store.get("coinopsPath");
   if (!exe || !fs.existsSync(exe)) {
@@ -228,11 +222,9 @@ ipcMain.handle("coinops:launch", async () => {
   }
   const boost = store.get("coinopsBoost");
   if (boost) {
-    // Minimize AlizceTV + unload MPV to free up CPU/GPU/RAM.
     killMpv();
     mainWindow?.minimize();
   }
-  // Launch CoinOps with HIGH priority on Windows to give arcades the full N100.
   if (process.platform === "win32") {
     spawn("cmd.exe",
       ["/c", "start", "/HIGH", "/B", "", `"${exe}"`],
@@ -244,7 +236,7 @@ ipcMain.handle("coinops:launch", async () => {
   return { ok: true, boosted: !!boost };
 });
 
-// ---------- MPV player (embedded via IPC pipe) ----------
+// ---------- MPV player ----------
 function resolveMpvPath() {
   const configured = store.get("mpvPath");
   if (configured && fs.existsSync(configured)) return configured;
@@ -318,7 +310,6 @@ ipcMain.handle("mpv:play", async (_e, { smbPath, share, folder, title }) => {
 
   killMpv();
 
-  // Build UNC path: \\host\share\folder\file  (smbPath already a server-side relative)
   const host = store.get("smbHost");
   const unc = `\\\\${host}\\${share}\\${(folder || "").replace(/\//g, "\\")}`;
   const pipeName = "\\\\.\\pipe\\alizcetv-mpv";
@@ -332,7 +323,6 @@ ipcMain.handle("mpv:play", async (_e, { smbPath, share, folder, title }) => {
     "--border=no",
     "--osd-level=1",
     "--hr-seek=yes",
-    // N100 / LG 4K TV optimisations
     "--vo=gpu-next",
     "--gpu-api=d3d11",
     "--hwdec=auto-safe",
@@ -354,7 +344,6 @@ ipcMain.handle("mpv:play", async (_e, { smbPath, share, folder, title }) => {
 
   try {
     await connectMpvIpc(pipeName);
-    // Observe common props
     await mpvSend(["observe_property", 1, "time-pos"]);
     await mpvSend(["observe_property", 2, "duration"]);
     await mpvSend(["observe_property", 3, "pause"]);
@@ -368,7 +357,6 @@ ipcMain.handle("mpv:play", async (_e, { smbPath, share, folder, title }) => {
 ipcMain.handle("mpv:command", async (_e, command) => mpvSend(command));
 ipcMain.handle("mpv:stop", async () => { killMpv(); return { ok: true }; });
 
-// Play ANY URL (IPTV, YouTube-dl'd streams, radio, etc.) via MPV
 ipcMain.handle("mpv:playUrl", async (_e, { url, title }) => {
   const exe = resolveMpvPath();
   if (!exe) return { error: "mpv.exe no encontrado. Configúralo en Ajustes." };
@@ -448,25 +436,21 @@ ipcMain.handle("iptv:getChannels", (_e, id) => {
   return cache[id]?.channels || [];
 });
 
-// Get current + next programme for a given channel of a given source.
 ipcMain.handle("iptv:getEpg", async (_e, { sourceId, channel }) => {
   const sources = store.get("iptvSources") || [];
   const src = sources.find((s) => s.id === sourceId);
   if (!src) return { now: null, next: null };
   const cache = store.get("iptvCache") || {};
   const epg = cache[sourceId]?.epgByChannel;
-  // Try by tvg-id first (XMLTV); fallback to channel name
   if (epg && channel.tvgId && epg[channel.tvgId]) {
     return programmesAt(epg[channel.tvgId]);
   }
-  // Xtream: lazy fetch short EPG per channel
   if (src.type === "xtream" && channel.xtreamId) {
     return xtreamShortEpg(src.host, src.user, src.pass, channel.xtreamId);
   }
   return { now: null, next: null };
 });
 
-// Toggle favorite for a channel on a given source.
 ipcMain.handle("iptv:toggleFavorite", (_e, { sourceId, channelName }) => {
   const all = store.get("iptvFavorites") || {};
   const favs = new Set(all[sourceId] || []);
@@ -482,12 +466,11 @@ ipcMain.handle("iptv:getFavorites", (_e, sourceId) => {
   return all[sourceId] || [];
 });
 
-// Open file externally (fallback)
 ipcMain.handle("shell:open", async (_e, p) => shell.openPath(p));
 
 // ---------- Streaming platform launcher ----------
 let cinemaWindow = null;
-let edgeCinemaProc = null; // tracked Edge --app (fullscreen) child process
+let edgeCinemaProc = null;
 let cinemaEscapeRegistered = false;
 
 function resolveEdgePath() {
@@ -499,6 +482,24 @@ function resolveEdgePath() {
   return null;
 }
 
+function resolveBravePath() {
+  const candidates = [
+    "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+    "C:\\Program Files (x86)\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+    path.join(process.env.LOCALAPPDATA || "", "BraveSoftware\\Brave-Browser\\Application\\brave.exe"),
+  ];
+  for (const p of candidates) { if (p && fs.existsSync(p)) return p; }
+  return null;
+}
+
+function edgeCinemaProfileDir() {
+  return path.join(app.getPath("userData"), "edge-cinema-profile");
+}
+
+function braveCinemaProfileDir() {
+  return path.join(app.getPath("userData"), "brave-cinema-profile");
+}
+
 function notifyCinemaState(open) {
   try { mainWindow?.webContents.send("cinema:state", { open }); } catch (_) {}
 }
@@ -507,12 +508,16 @@ function registerCinemaEscape() {
   if (cinemaEscapeRegistered) return;
   try {
     globalShortcut.register("Escape", () => closeAnyCinema());
+    // Alt+F4 como atajo "seguro": el globalShortcut de Electron lo captura
+    // aunque el foco esté en Brave/Edge, y cierra la ventana cinema.
+    globalShortcut.register("Alt+F4", () => closeAnyCinema());
     cinemaEscapeRegistered = true;
   } catch (_) {}
 }
 function unregisterCinemaEscape() {
   if (!cinemaEscapeRegistered) return;
   try { globalShortcut.unregister("Escape"); } catch (_) {}
+  try { globalShortcut.unregister("Alt+F4"); } catch (_) {}
   cinemaEscapeRegistered = false;
 }
 
@@ -520,7 +525,6 @@ function closeAnyCinema() {
   if (edgeCinemaProc && !edgeCinemaProc.killed) {
     try {
       if (process.platform === "win32") {
-        // taskkill forces the Edge --kiosk tree down (child renderers too)
         spawn("taskkill", ["/pid", String(edgeCinemaProc.pid), "/T", "/F"], { stdio: "ignore" });
       } else {
         edgeCinemaProc.kill("SIGTERM");
@@ -530,26 +534,12 @@ function closeAnyCinema() {
   if (cinemaWindow) {
     try { cinemaWindow.close(); } catch (_) {}
   }
-}
-
-// Directorio del perfil de Edge propio de AlizceTV (separado del Edge normal).
-// La extensión (uBlock Origin Lite) se instala UNA vez en este perfil y persiste,
-// igual que el login de YouTube. Ver electron/README.md -> "Perfil de Edge".
-function edgeCinemaProfileDir() {
-  return path.join(app.getPath("userData"), "edge-cinema-profile");
+  try { killMpv(); } catch (_) {}
 }
 
 function openCinemaEdge(url, label) {
   const edge = resolveEdgePath();
   if (!edge) return false;
-  // OJO: `--kiosk --edge-kiosk-type=fullscreen` abre Edge en una sesión InPrivate
-  // y Microsoft documenta que las extensiones no funcionan en modo kiosco, así
-  // que uBlock nunca se aplicaba. En su lugar usamos una ventana --app (sin barra
-  // de título, pestañas ni direcciones) a pantalla completa, que sí carga las
-  // extensiones del perfil.
-  // --user-data-dir: perfil propio -> proceso de Edge independiente (aunque haya
-  // otro Edge abierto), así podemos seguirlo y cerrarlo con Escape sin tocar el
-  // Edge normal del usuario.
   const args = [
     `--user-data-dir=${edgeCinemaProfileDir()}`,
     `--app=${url}`,
@@ -576,14 +566,44 @@ function openCinemaEdge(url, label) {
   }
 }
 
+function openCinemaBrave(url, label) {
+  const brave = resolveBravePath();
+  if (!brave) return false;
+  const args = [
+    `--user-data-dir=${braveCinemaProfileDir()}`,
+    "--kiosk",
+    url,
+    "--no-first-run",
+    "--no-default-browser-check",
+  ];
+  try {
+    edgeCinemaProc = spawn(brave, args, { detached: false, stdio: "ignore" });
+    registerCinemaEscape();
+    notifyCinemaState(true);
+    edgeCinemaProc.on("exit", () => {
+      edgeCinemaProc = null;
+      if (!cinemaWindow) {
+        unregisterCinemaEscape();
+        notifyCinemaState(false);
+      }
+      mainWindow?.focus();
+    });
+    return true;
+  } catch (_) {
+    edgeCinemaProc = null;
+    return false;
+  }
+}
+
 function openCinema(url, label, options = {}) {
-  // Prefer Microsoft Edge in kiosk mode on Windows so user keeps
-  // their installed extensions (uBlock, SponsorBlock, downloaders…).
   if (process.platform === "win32" && !options.forceElectron) {
-    if (openCinemaEdge(url, label)) return;
+    if (options.browser === "brave") {
+      if (openCinemaBrave(url, label)) return;
+    } else {
+      if (openCinemaEdge(url, label)) return;
+    }
   }
 
-  // Fallback: Electron BrowserWindow with built-in adblocker.
   if (cinemaWindow) { try { cinemaWindow.close(); } catch (_) {} cinemaWindow = null; }
   const partition = `persist:cinema-${label.toLowerCase().replace(/\s/g, "-")}`;
   const sess = session.fromPartition(partition);
@@ -701,7 +721,6 @@ function startYtDlp(url, quality) {
   });
 }
 
-// Register alizce-dl:// protocol handler for the yt-dlp overlay
 app.on("web-contents-created", (_e, contents) => {
   contents.setWindowOpenHandler((details) => {
     const u = details.url;
@@ -721,13 +740,10 @@ ipcMain.handle("platform:launch", async (_e, id) => {
   if (!def) return { error: `Plataforma desconocida: ${id}` };
   const overrides = store.get("platformModes") || {};
   let mode = overrides[id] || def.defaultMode;
-  // Fallback if user chose UWP but platform has no protocol
   if (mode === "uwp" && !def.protocol) mode = "cinema";
 
   try {
     if (mode === "uwp") {
-      // Attempt protocol launch. On Windows if the app isn't installed,
-      // Windows shows a dialog "Open with"; we fallback to cinema in 2s.
       shell.openExternal(def.protocol);
       return { ok: true, mode };
     }
@@ -735,10 +751,10 @@ ipcMain.handle("platform:launch", async (_e, id) => {
       shell.openExternal(def.web);
       return { ok: true, mode };
     }
-    // cinema
     openCinema(def.web, def.label, {
       withYtDlp: id === "youtube",
       forceElectron: !!def.forceElectronCinema,
+      browser: def.browser || "edge",
     });
     return { ok: true, mode };
   } catch (e) {
@@ -764,16 +780,11 @@ ipcMain.handle("platform:setMode", (_e, { id, mode }) => {
   return modes;
 });
 
-// Close whichever cinema is active (Edge --kiosk child or Electron window).
-// Invoked by renderer when user presses gamepad Y, or anything that needs
-// to force-close the current full-screen app.
 ipcMain.handle("cinema:close", () => {
   closeAnyCinema();
   return { ok: true };
 });
 
-// Cierra la app activa lanzada por AlizceTV (Edge cinema o MPV).
-// NO cierra AlizceTV. Pensado para el botón "Cerrar app" del mando.
 ipcMain.handle("app:closeActive", () => {
   let closed = null;
   if (edgeCinemaProc && !edgeCinemaProc.killed) {
@@ -790,7 +801,6 @@ ipcMain.handle("app:closeActive", () => {
 
 // ---------- TMDB catalog ----------
 async function listAllVideosInShare(share) {
-  // Recursively list up to depth 2 to grab Peliculas/*.mkv and Series/*/*/*.mkv
   const files = [];
   const walk = (folder, depth) => new Promise((resolve) => {
     const smb = makeSmb(share);

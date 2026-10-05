@@ -1,5 +1,5 @@
 // AlizceTV — Platform launch matrix
-// For each streaming platform: UWP app (if any), cinema (Edge --app), external browser.
+// For each streaming platform: UWP app (if any), cinema (Edge or Brave), external browser.
 // Verified URLs and protocols as of Jan 2026.
 
 module.exports = {
@@ -52,6 +52,7 @@ module.exports = {
     protocol: null,
     hasUwp: false,
     defaultMode: "cinema",
+    browser: "brave", // Brave en kiosco: pantalla completa sin barra y con bloqueo de anuncios integrado
   },
   twitch: {
     label: "Twitch",
