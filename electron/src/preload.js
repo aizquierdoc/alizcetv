@@ -63,8 +63,18 @@ contextBridge.exposeInMainWorld("alizce", {
     launch: (id) => ipcRenderer.invoke("platform:launch", id),
     setMode: (id, mode) => ipcRenderer.invoke("platform:setMode", { id, mode }),
   },
+  app: {
+    closeActive: () => ipcRenderer.invoke("app:closeActive"),
+  },
 
   cinema: {
+    close: () => ipcRenderer.invoke("cinema:close"),
+    onState: (cb) => {
+      const handler = (_e, msg) => cb(msg);
+      ipcRenderer.on("cinema:state", handler);
+      return () => ipcRenderer.removeListener("cinema:state", handler);
+    },
+  },  cinema: {
     close: () => ipcRenderer.invoke("cinema:close"),
     onState: (cb) => {
       const handler = (_e, msg) => cb(msg);

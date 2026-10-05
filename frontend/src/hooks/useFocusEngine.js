@@ -16,6 +16,7 @@ export const DEFAULT_BUTTON_MAP = {
   playpause: 0,  // A (same as accept, context-sensitive)
   minimize: 8,   // Select / Back
   shutdown: -1,  // Unmapped by default (user must set)
+  closeApp: -1,  // Unmapped by default (user must set)
 };
 
 function rectOf(el) {
@@ -70,7 +71,7 @@ if (typeof window !== "undefined" && window.alizce?.settings) {
 }
 
 export function useFocusEngine(options = {}) {
-  const { enabled = true, onBack, onMenu, onPlayPause, onMinimize, onShutdown, onFavorite } = options;
+  const { enabled = true, onBack, onMenu, onPlayPause, onMinimize, onShutdown, onFavorite, onCloseApp } = options;
   const [focusedId, setFocusedId] = useState(null);
   const focusedRef = useRef(null);
 
@@ -206,13 +207,14 @@ export function useFocusEngine(options = {}) {
         check("menu", onFavorite || onMenu);
         check("playpause", onPlayPause);
         check("minimize", onMinimize);
+	check("closeApp", onCloseApp);
         check("shutdown", onShutdown);
       }
       raf = requestAnimationFrame(poll);
     };
     raf = requestAnimationFrame(poll);
     return () => cancelAnimationFrame(raf);
-  }, [enabled, move, confirm, onBack, onMenu, onPlayPause, onMinimize, onShutdown, onFavorite]);
+  }, [enabled, move, confirm, onBack, onMenu, onPlayPause, onMinimize, onShutdown, onFavorite, onCloseApp]);
 
   return { focusedId, applyFocus, focusFirst, move, confirm };
 }

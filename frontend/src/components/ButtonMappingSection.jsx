@@ -10,6 +10,7 @@ const ACTIONS = [
   { k: "menu",      label: "Menú / Ajustes", hint: "Abre la pantalla de ajustes desde cualquier sitio" },
   { k: "playpause", label: "Play / Pausa", hint: "Pausa o reanuda la reproducción" },
   { k: "minimize",  label: "Minimizar",    hint: "Esconde AlizceTV para ver el escritorio de Windows" },
+  { k: "closeApp",  label: "Cerrar app",   hint: "Cierra la app activa (YouTube, HBO, reproductor…)" },
   { k: "shutdown",  label: "Apagar PC",    hint: "Pide confirmación y apaga el equipo (sin asignar por defecto)" },
 ];
 

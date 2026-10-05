@@ -772,6 +772,22 @@ ipcMain.handle("cinema:close", () => {
   return { ok: true };
 });
 
+// Cierra la app activa lanzada por AlizceTV (Edge cinema o MPV).
+// NO cierra AlizceTV. Pensado para el botón "Cerrar app" del mando.
+ipcMain.handle("app:closeActive", () => {
+  let closed = null;
+  if (edgeCinemaProc && !edgeCinemaProc.killed) {
+    closeAnyCinema();
+    closed = "cinema";
+  } else if (cinemaWindow) {
+    closeAnyCinema();
+    closed = "cinema-window";
+  } else {
+    try { killMpv(); closed = "mpv"; } catch (_) {}
+  }
+  return { ok: true, closed };
+});
+
 // ---------- TMDB catalog ----------
 async function listAllVideosInShare(share) {
   // Recursively list up to depth 2 to grab Peliculas/*.mkv and Series/*/*/*.mkv
