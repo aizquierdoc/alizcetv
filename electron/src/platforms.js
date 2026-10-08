@@ -1,50 +1,55 @@
 // AlizceTV — Platform launch matrix
-// For each streaming platform: UWP app (if any), cinema (Edge or Brave), external browser.
+// For each streaming platform: UWP app (if any), cinema (Edge, Brave or VacuumTube), external browser.
 // Verified URLs and protocols as of Jan 2026.
 
 module.exports = {
   netflix: {
     label: "Netflix",
     web: "https://www.netflix.com",
-    protocol: "netflix://",   // Netflix UWP (Microsoft Store)
-    hasUwp: true,
-    defaultMode: "uwp",
+    protocol: null,
+    hasUwp: false,
+    defaultMode: "cinema",
+    browser: "brave",
   },
   prime: {
     label: "Prime Video",
     web: "https://www.primevideo.com",
-    protocol: "primevideo://", // Prime Video UWP (Microsoft Store)
-    hasUwp: true,
-    defaultMode: "uwp",
+    protocol: null,
+    hasUwp: false,
+    defaultMode: "cinema",
+    browser: "brave",
   },
   disney: {
     label: "Disney+",
     web: "https://www.disneyplus.com/es-es",
-    protocol: "disneyplus://",  // Disney+ UWP
-    hasUwp: true,
-    defaultMode: "uwp",
+    protocol: null,
+    hasUwp: false,
+    defaultMode: "cinema",
+    browser: "brave",
   },
   hbo: {
     label: "HBO Max",
     web: "https://play.max.com",
-    protocol: null,            // No UWP on Windows (Max discontinued it)
+    protocol: null,
     hasUwp: false,
     defaultMode: "cinema",
-    forceElectronCinema: true, // Ventana frameless Electron (sin barra, Escape cierra)
+    browser: "brave",
   },
   movistar: {
     label: "Movistar+",
     web: "https://ver.movistarplus.es",
-    protocol: "movistarplus://",
-    hasUwp: true,
-    defaultMode: "uwp",
+    protocol: null,
+    hasUwp: false,
+    defaultMode: "cinema",
+    browser: "brave",
   },
   apple: {
     label: "Apple TV+",
     web: "https://tv.apple.com",
-    protocol: "com.apple.atv://",
-    hasUwp: true,
-    defaultMode: "cinema", // User preference — defaults to Edge cinema
+    protocol: null,
+    hasUwp: false,
+    defaultMode: "cinema",
+    browser: "brave",
   },
   youtube: {
     label: "YouTube",
@@ -52,14 +57,15 @@ module.exports = {
     protocol: null,
     hasUwp: false,
     defaultMode: "cinema",
-    browser: "brave", // Brave en kiosco: pantalla completa sin barra y con bloqueo de anuncios integrado
+    browser: "vacuumtube",
   },
   twitch: {
     label: "Twitch",
     web: "https://www.twitch.tv",
-    protocol: "twitch://",
-    hasUwp: true,
-    defaultMode: "uwp",
+    protocol: null,
+    hasUwp: false,
+    defaultMode: "cinema",
+    browser: "brave",
   },
   filmin: {
     label: "Filmin",
@@ -67,5 +73,6 @@ module.exports = {
     protocol: null,
     hasUwp: false,
     defaultMode: "cinema",
+    browser: "brave",
   },
 };

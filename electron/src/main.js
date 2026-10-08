@@ -1,4 +1,4 @@
-// AlizceTV — Electron main process
+﻿// AlizceTV â€” Electron main process
 // Window, IPC bridge for SMB listing, settings, CoinOps launch, MPV control.
 
 const { app, BrowserWindow, ipcMain, dialog, shell, protocol, session, globalShortcut } = require("electron");
@@ -25,6 +25,7 @@ const store = new Store({
     smbPassword: "",
     coinopsPath: "",
     mpvPath: "",
+    mpvTheme: "awesome-osc",
     continueWatching: [],
     platformModes: {},
     tmdbApiKey: "",
@@ -37,6 +38,32 @@ const store = new Store({
     adBlock: true,
   },
 });
+// -------- IPTV cache (archivo aparte para no engordar config.json) --------
+function iptvCachePath() {
+  return path.join(app.getPath("userData"), "iptv-cache.json");
+}
+
+function readIptvCache() {
+  try {
+    const p = iptvCachePath();
+    if (!fs.existsSync(p)) return {};
+    const raw = fs.readFileSync(p, "utf8");
+    return JSON.parse(raw) || {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function writeIptvCache(cache) {
+  try {
+    const p = iptvCachePath();
+    fs.writeFileSync(p, JSON.stringify(cache), "utf8");
+    return true;
+  } catch (e) {
+    console.error("writeIptvCache error:", e.message);
+    return false;
+  }
+}
 
 let mainWindow = null;
 let mpvProc = null;
@@ -65,7 +92,7 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
-      backgroundThrottling: false,
+      backgroundThrottling: true,
     },
   });
 
@@ -87,7 +114,24 @@ function createWindow() {
   });
 
   mainWindow.on("close", (e) => {
-    if (!app.isQuitting) { e.preventDefault(); mainWindow.minimize(); }
+    if (!app.isQuitting) { e.preventDefault(); mainWindow.hide(); }
+  });
+}
+
+// -------- Single instance lock --------
+// Evita que se abran varias instancias de AlizceTV. Si alguien intenta abrir
+// el .exe otra vez, la segunda instancia se cierra y la primera se trae al frente.
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
   });
 }
 
@@ -112,7 +156,7 @@ app.on("window-all-closed", () => {
 app.on("before-quit", () => { app.isQuitting = true; try { globalShortcut.unregisterAll(); } catch (_) {} });
 
 // ---------- System window actions ----------
-ipcMain.handle("system:minimize", () => { mainWindow?.minimize(); return { ok: true }; });
+ipcMain.handle("system:minimize", () => { mainWindow?.hide(); return { ok: true }; });
 ipcMain.handle("system:close", () => { app.isQuitting = true; app.quit(); return { ok: true }; });
 ipcMain.handle("system:shutdown", () => {
   if (process.platform === "win32") {
@@ -223,7 +267,7 @@ ipcMain.handle("coinops:launch", async () => {
   const boost = store.get("coinopsBoost");
   if (boost) {
     killMpv();
-    mainWindow?.minimize();
+    mainWindow?.hide();
   }
   if (process.platform === "win32") {
     spawn("cmd.exe",
@@ -243,6 +287,13 @@ function resolveMpvPath() {
   const bundled = path.join(process.resourcesPath || __dirname, "mpv", "mpv.exe");
   if (fs.existsSync(bundled)) return bundled;
   return null;
+}
+
+function buildOscThemeArgs() {
+  const theme = store.get("mpvTheme") || "modernz";
+  const all = ["awesome-osc", "modernz", "modernx"];
+  const opts = all.map(t => `${t}=disabled=${t === theme ? "no" : "yes"}`).join(",");
+  return ["--osc=no", `--script-opts=${opts}`];
 }
 
 function killMpv() {
@@ -306,7 +357,7 @@ function mpvSend(command) {
 
 ipcMain.handle("mpv:play", async (_e, { smbPath, share, folder, title }) => {
   const exe = resolveMpvPath();
-  if (!exe) return { error: "mpv.exe no encontrado. Configúralo en Ajustes." };
+  if (!exe) return { error: "mpv.exe no encontrado. ConfigÃºralo en Ajustes." };
 
   killMpv();
 
@@ -321,26 +372,47 @@ ipcMain.handle("mpv:play", async (_e, { smbPath, share, folder, title }) => {
     "--force-window=yes",
     "--ontop",
     "--border=no",
+    "--title-bar=no",
     "--osd-level=1",
     "--hr-seek=yes",
     "--vo=gpu-next",
     "--gpu-api=d3d11",
     "--hwdec=auto-safe",
-    "--profile=gpu-hq",
-    "--video-sync=display-resample",
-    "--interpolation=yes",
-    "--tscale=oversample",
+    "--profile=fast",
+    "--video-sync=audio",
     "--d3d11-adapter=",
     "--audio-channels=auto-safe",
     `--title=${title || "AlizceTV"}`,
+    ...buildOscThemeArgs(),
   ];
 
-  mpvProc = spawn(exe, args, { detached: false, stdio: "ignore" });
-  mpvProc.on("exit", () => {
-    killMpv();
-    mainWindow?.webContents.send("mpv:event", { event: "end-file" });
-    mainWindow?.focus();
-  });
+  // MPV como proceso independiente (detached:true) SIN unref,
+  // asÃ­ conservamos su pid y su referencia.
+  mpvProc = spawn(exe, args, { detached: true, stdio: "ignore" });
+  const mpvPid = mpvProc.pid;
+
+  // Cerrar AlizceTV de verdad mientras MPV reproduce (libera CPU/GPU).
+  // Esperamos 2 segundos para que MPV termine de arrancar y abrir su ventana.
+  // Ocultar AlizceTV y bajarle el framerate al minimo mientras MPV reproduce
+  if (mainWindow) {
+    try { mainWindow.hide(); } catch (_) {}
+    try { mainWindow.webContents.setFrameRate(1); } catch (_) {}
+  }
+
+  // Vigilamos la salida de MPV con polling
+  const checkInterval = setInterval(() => {
+    try {
+      process.kill(mpvPid, 0);
+    } catch (_) {
+      clearInterval(checkInterval);
+      killMpv();
+      if (mainWindow) {
+        try { mainWindow.show(); } catch (_) {}
+        try { mainWindow.focus(); } catch (_) {}
+        try { mainWindow.webContents.setFrameRate(60); } catch (_) {}
+      }
+    }
+  }, 500);
 
   try {
     await connectMpvIpc(pipeName);
@@ -353,13 +425,12 @@ ipcMain.handle("mpv:play", async (_e, { smbPath, share, folder, title }) => {
     return { error: e.message };
   }
 });
-
 ipcMain.handle("mpv:command", async (_e, command) => mpvSend(command));
 ipcMain.handle("mpv:stop", async () => { killMpv(); return { ok: true }; });
 
 ipcMain.handle("mpv:playUrl", async (_e, { url, title }) => {
   const exe = resolveMpvPath();
-  if (!exe) return { error: "mpv.exe no encontrado. Configúralo en Ajustes." };
+  if (!exe) return { error: "mpv.exe no encontrado. ConfigÃºralo en Ajustes." };
   killMpv();
   const pipeName = "\\\\.\\pipe\\alizcetv-mpv";
   const args = [
@@ -369,19 +440,47 @@ ipcMain.handle("mpv:playUrl", async (_e, { url, title }) => {
     "--force-window=yes",
     "--ontop",
     "--border=no",
+    "--title-bar=no",
     "--osd-level=1",
     "--hr-seek=yes",
     "--vo=gpu-next",
     "--gpu-api=d3d11",
     "--hwdec=auto-safe",
-    "--profile=gpu-hq",
+    "--profile=fast",
+    "--video-sync=audio",
     "--cache=yes",
     "--demuxer-max-bytes=200M",
     "--demuxer-readahead-secs=20",
     `--title=${title || "AlizceTV"}`,
+    ...buildOscThemeArgs(),
   ];
-  mpvProc = spawn(exe, args, { detached: false, stdio: "ignore" });
-  mpvProc.on("exit", () => { killMpv(); mainWindow?.webContents.send("mpv:event", { event: "end-file" }); mainWindow?.focus(); });
+
+  // MPV como proceso INDEPENDIENTE para que sobreviva al cierre de AlizceTV
+  mpvProc = spawn(exe, args, { detached: true, stdio: "ignore" });
+  const mpvPid = mpvProc.pid;
+
+  // Cerrar AlizceTV de verdad mientras MPV reproduce (libera CPU/GPU).
+  // Esperamos 2 segundos para que MPV termine de arrancar y abrir su ventana.
+  // Ocultar AlizceTV y bajarle el framerate al minimo mientras MPV reproduce
+  if (mainWindow) {
+    try { mainWindow.hide(); } catch (_) {}
+    try { mainWindow.webContents.setFrameRate(1); } catch (_) {}
+  }
+
+  const checkInterval = setInterval(() => {
+    try {
+      process.kill(mpvPid, 0);
+    } catch (_) {
+      clearInterval(checkInterval);
+      killMpv();
+      if (mainWindow) {
+        try { mainWindow.show(); } catch (_) {}
+        try { mainWindow.focus(); } catch (_) {}
+        try { mainWindow.webContents.setFrameRate(60); } catch (_) {}
+      }
+    }
+  }, 500);
+
   try {
     await connectMpvIpc(pipeName);
     await mpvSend(["observe_property", 1, "time-pos"]);
@@ -410,9 +509,9 @@ ipcMain.handle("iptv:addSource", (_e, src) => {
 ipcMain.handle("iptv:removeSource", (_e, id) => {
   const sources = (store.get("iptvSources") || []).filter((s) => s.id !== id);
   store.set("iptvSources", sources);
-  const cache = store.get("iptvCache") || {};
+  const cache = readIptvCache() || {};
   delete cache[id];
-  store.set("iptvCache", cache);
+  writeIptvCache(cache);
   return sources;
 });
 
@@ -422,9 +521,9 @@ ipcMain.handle("iptv:refresh", async (_e, id) => {
   if (!src) return { error: "Fuente no encontrada" };
   try {
     const { channels, epgByChannel } = await loadSource(src);
-    const cache = store.get("iptvCache") || {};
+    const cache = readIptvCache() || {};
     cache[id] = { fetchedAt: Date.now(), channels, epgByChannel: epgByChannel || {} };
-    store.set("iptvCache", cache);
+    writeIptvCache(cache);
     return { ok: true, count: channels.length, hasEpg: Object.keys(epgByChannel || {}).length > 0 };
   } catch (e) {
     return { error: e.message };
@@ -432,7 +531,7 @@ ipcMain.handle("iptv:refresh", async (_e, id) => {
 });
 
 ipcMain.handle("iptv:getChannels", (_e, id) => {
-  const cache = store.get("iptvCache") || {};
+  const cache = readIptvCache() || {};
   return cache[id]?.channels || [];
 });
 
@@ -440,7 +539,7 @@ ipcMain.handle("iptv:getEpg", async (_e, { sourceId, channel }) => {
   const sources = store.get("iptvSources") || [];
   const src = sources.find((s) => s.id === sourceId);
   if (!src) return { now: null, next: null };
-  const cache = store.get("iptvCache") || {};
+  const cache = readIptvCache() || {};
   const epg = cache[sourceId]?.epgByChannel;
   if (epg && channel.tvgId && epg[channel.tvgId]) {
     return programmesAt(epg[channel.tvgId]);
@@ -492,6 +591,16 @@ function resolveBravePath() {
   return null;
 }
 
+function resolveVacuumTubePath() {
+  const candidates = [
+    "C:\\Program Files\\VacuumTube\\VacuumTube.exe",
+    "C:\\Program Files (x86)\\VacuumTube\\VacuumTube.exe",
+    path.join(process.env.LOCALAPPDATA || "", "Programs\\VacuumTube\\VacuumTube.exe"),
+  ];
+  for (const p of candidates) { if (p && fs.existsSync(p)) return p; }
+  return null;
+}
+
 function edgeCinemaProfileDir() {
   return path.join(app.getPath("userData"), "edge-cinema-profile");
 }
@@ -508,8 +617,6 @@ function registerCinemaEscape() {
   if (cinemaEscapeRegistered) return;
   try {
     globalShortcut.register("Escape", () => closeAnyCinema());
-    // Alt+F4 como atajo "seguro": el globalShortcut de Electron lo captura
-    // aunque el foco esté en Brave/Edge, y cierra la ventana cinema.
     globalShortcut.register("Alt+F4", () => closeAnyCinema());
     cinemaEscapeRegistered = true;
   } catch (_) {}
@@ -544,6 +651,7 @@ function openCinemaEdge(url, label) {
     `--user-data-dir=${edgeCinemaProfileDir()}`,
     `--app=${url}`,
     "--start-fullscreen",
+    "--hide-scrollbars",
     "--no-first-run",
     "--no-default-browser-check",
   ];
@@ -572,6 +680,7 @@ function openCinemaBrave(url, label) {
   const args = [
     `--user-data-dir=${braveCinemaProfileDir()}`,
     "--kiosk",
+    "--hide-scrollbars",
     url,
     "--no-first-run",
     "--no-default-browser-check",
@@ -595,9 +704,38 @@ function openCinemaBrave(url, label) {
   }
 }
 
+function openCinemaVacuumTube(url, label) {
+  const vt = resolveVacuumTubePath();
+  if (!vt) return false;
+  const args = [
+    "--fullscreen",
+    "--no-window-decorations",
+  ];
+  if (url) args.push(url);
+  try {
+    edgeCinemaProc = spawn(vt, args, { detached: false, stdio: "ignore" });
+    registerCinemaEscape();
+    notifyCinemaState(true);
+    edgeCinemaProc.on("exit", () => {
+      edgeCinemaProc = null;
+      if (!cinemaWindow) {
+        unregisterCinemaEscape();
+        notifyCinemaState(false);
+      }
+      mainWindow?.focus();
+    });
+    return true;
+  } catch (_) {
+    edgeCinemaProc = null;
+    return false;
+  }
+}
+
 function openCinema(url, label, options = {}) {
   if (process.platform === "win32" && !options.forceElectron) {
-    if (options.browser === "brave") {
+    if (options.browser === "vacuumtube") {
+      if (openCinemaVacuumTube(url, label)) return;
+    } else if (options.browser === "brave") {
       if (openCinemaBrave(url, label)) return;
     } else {
       if (openCinemaEdge(url, label)) return;
@@ -613,17 +751,22 @@ function openCinema(url, label, options = {}) {
     width: 1920, height: 1080,
     fullscreen: true, frame: false,
     backgroundColor: "#000000",
-    title: `AlizceTV — ${label}`,
+    title: `AlizceTV â€” ${label}`,
     icon: path.join(__dirname, "..", "build", "icon.ico"),
     webPreferences: {
       contextIsolation: true, nodeIntegration: false,
       partition,
-      backgroundThrottling: false,
+      backgroundThrottling: true,
     },
   });
   cinemaWindow.setMenuBarVisibility(false);
   cinemaWindow.loadURL(url, { userAgent:
     "Mozilla/5.0 (SMART-TV; Linux; Tizen 6.5) AppleWebKit/537.36 (KHTML, like Gecko) 85.0.4183.93/6.5 TV Safari/537.36"
+  });
+  cinemaWindow.webContents.on("did-finish-load", () => {
+    cinemaWindow.webContents.insertCSS(
+      "::-webkit-scrollbar { display: none !important; } html, body { scrollbar-width: none !important; -ms-overflow-style: none !important; }"
+    ).catch(() => {});
   });
   cinemaWindow.webContents.on("before-input-event", (event, input) => {
     if (input.type === "keyDown" && (input.key === "Escape" || input.key === "Backspace")) {
@@ -717,7 +860,7 @@ function startYtDlp(url, quality) {
   proc.stdout?.on("data", updateStatus);
   proc.stderr?.on("data", updateStatus);
   proc.on("exit", (code) => {
-    updateStatus(code === 0 ? "✓ Descarga completada en " + outDir : "✗ Error (código " + code + ")");
+    updateStatus(code === 0 ? "âœ“ Descarga completada en " + outDir : "âœ— Error (cÃ³digo " + code + ")");
   });
 }
 
@@ -878,3 +1021,6 @@ ipcMain.handle("tmdb:status", () => ({
   lastScanAt: store.get("lastScanAt") || null,
   running: scanRunning,
 }));
+
+
+
