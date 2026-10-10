@@ -50,3 +50,16 @@ C:\win-unpacked\backups\MagicRemoteService-registro.reg
 HKLM\Software\WOW6432Node\MagicRemoteService\
   - Device\latele → configuración del dispositivo
   - Remote\Bind\0xXXXX → mapeo de teclas (cada botón tiene su clave)
+
+## Ubicacion del proyecto
+
+- **C:\alizcetv\** → repo de Git (codigo fuente, se sube a GitHub).
+- **C:\win-unpacked\** → app compilada (se ejecuta a diario, no se sube a GitHub).
+- **C:\alizcetv\VacuumTube\** → fork de VacuumTube (repo independiente).
+
+## Como se actualiza
+
+1. Editar el codigo en C:\alizcetv\ (o C:\alizcetv\VacuumTube\).
+2. Compilar: npm run pack (AlizceTV) o npm run windows:build (VacuumTube).
+3. Copiar el resultado a C:\win-unpacked\ (o instalar).
+4. Ejecutar desde C:\win-unpacked\.
