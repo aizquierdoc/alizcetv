@@ -103,3 +103,12 @@ electron/vendor/**/*.zip
 _scripts_iptv_manager/
 backups/
 frontend/public/index.html.bak
+
+# AlizceTV - lockfiles generados localmente
+frontend/package-lock.json
+electron/package-lock.json
+
+# AlizceTV - dev artifacts
+_scripts_iptv_manager/
+backups/
+frontend/public/index.html.bak
