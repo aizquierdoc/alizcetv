@@ -98,3 +98,8 @@ electron/vendor/**/*.zip
 
 # Parches temporales
 *.patch
+
+# AlizceTV dev artifacts
+_scripts_iptv_manager/
+backups/
+frontend/public/index.html.bak

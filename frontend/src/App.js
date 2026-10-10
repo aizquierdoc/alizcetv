@@ -1,4 +1,5 @@
 import React from "react";
+import { ConfirmProvider } from "./components/ConfirmProvider";
 import "./App.css";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import AuroraBackground from "./components/AuroraBackground";
@@ -12,6 +13,7 @@ import Iptv from "./pages/Iptv";
 
 function App() {
   return (
+    <ConfirmProvider>
     <div className="App">
       <AuroraBackground />
       <CinemaExitWatcher />
@@ -28,6 +30,8 @@ function App() {
         </HashRouter>
       </div>
     </div>
+    </ConfirmProvider>
+  
   );
 }
 

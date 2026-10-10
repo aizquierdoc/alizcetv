@@ -6,6 +6,7 @@ import Focusable from "../components/Focusable";
 import GamepadLegend from "../components/GamepadLegend";
 import { useFocusEngine } from "../hooks/useFocusEngine";
 import { iptvService, mpvService, isElectron, systemService } from "../services/alizceApi";
+import { useConfirm } from "../components/ConfirmProvider";
 
 function fmtTime(ms) {
   const d = new Date(ms);
@@ -13,6 +14,7 @@ function fmtTime(ms) {
 }
 
 export default function Iptv() {
+  const confirm = useConfirm();
   const navigate = useNavigate();
   const [sources, setSources] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -124,7 +126,13 @@ export default function Iptv() {
   };
 
   const removeSource = async (id) => {
-    if (!confirm("¿Eliminar esta lista?")) return;
+    const ok = await confirm({
+      title: "Eliminar lista IPTV",
+      message: "Se eliminara esta lista y su cache de canales. Esta accion no se puede deshacer.",
+      confirmLabel: "Eliminar",
+      danger: true,
+    });
+    if (!ok) return;
     await iptvService.removeSource(id);
     setActiveId(null);
     await reload();

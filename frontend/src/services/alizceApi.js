@@ -160,6 +160,12 @@ export const iptvService = {
     if (api) return api.iptv.getFavorites(sourceId);
     return [];
   },
+  async getHidden(sourceId) { if (api) return api.iptv.getHidden(sourceId); return []; },
+  async setHidden(sourceId, names) { if (api) return api.iptv.setHidden(sourceId, names); return names; },
+  async hideChannels(sourceId, names) { if (api) return api.iptv.hideChannels(sourceId, names); return names; },
+  async unhideChannels(sourceId, names) { if (api) return api.iptv.unhideChannels(sourceId, names); return []; },
+  async unhideAll(sourceId) { if (api) return api.iptv.unhideAll(sourceId); return []; },
+  async getHiddenChannels(sourceId) { if (api) return api.iptv.getHiddenChannels(sourceId); return []; },
 };
 
 // ----- MPV -----

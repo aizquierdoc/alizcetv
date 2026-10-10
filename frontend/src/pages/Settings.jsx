@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, FolderSearch, Save, HardDrive, Film, Gamepad2, Check, Tv, Key, RefreshCw, Loader2, ExternalLink } from "lucide-react";
+import { ArrowLeft, FolderSearch, Save, HardDrive, Film, Gamepad2, Check, Tv, Key, RefreshCw, Loader2, ExternalLink, Radio } from "lucide-react";
 import TopBar from "../components/TopBar";
 import Focusable from "../components/Focusable";
 import GamepadLegend from "../components/GamepadLegend";
 import ButtonMappingSection from "../components/ButtonMappingSection";
+import IptvChannelManager from "../components/IptvChannelManager";
 import { useFocusEngine } from "../hooks/useFocusEngine";
 import { settingsService, platformService, tmdbService, isElectron, systemService } from "../services/alizceApi";
 
@@ -143,6 +144,19 @@ export default function Settings() {
               Acceso en modo Invitado (sin usuario/contraseña).
             </div>
           </div>
+        </section>
+
+        {/* IPTV Channels */}
+        <section className="mb-10">
+          <h3 className="font-title text-xl text-white tracking-widest uppercase mb-5 flex items-center gap-3">
+            <Radio size={20} className="text-amber-400" /> Canales IPTV
+          </h3>
+          <p className="text-xs text-slate-400 leading-relaxed mb-4">
+            Selecciona los canales que quieres ocultar de la parrilla. No se
+            borran de la lista original, solo se filtran. Puedes restaurarlos
+            cuando quieras.
+          </p>
+          <IptvChannelManager />
         </section>
 
         {/* Button mapping */}

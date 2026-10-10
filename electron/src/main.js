@@ -1,4 +1,4 @@
-﻿// AlizceTV â€” Electron main process
+// AlizceTV â€” Electron main process
 // Window, IPC bridge for SMB listing, settings, CoinOps launch, MPV control.
 
 const { app, BrowserWindow, ipcMain, dialog, shell, protocol, session, globalShortcut } = require("electron");
@@ -33,6 +33,8 @@ const store = new Store({
     buttonMap: null,
     iptvSources: [],
     iptvCache: {},
+    iptvHidden: {},
+    iptvFavorites: {},
     coinopsBoost: true,
     youtubeDownloads: "",
     adBlock: true,
@@ -100,7 +102,7 @@ function createWindow() {
   mainWindow.once("ready-to-show", () => {
     mainWindow.show();
     mainWindow.setFullScreen(true);
-    if (isDev) mainWindow.webContents.openDevTools({ mode: "detach" });
+    if (isDev && process.env.ALIZCETV_DEVTOOLS === "1") mainWindow.webContents.openDevTools({ mode: "detach" });
   });
 
   const indexPath = isDev
@@ -532,7 +534,56 @@ ipcMain.handle("iptv:refresh", async (_e, id) => {
 
 ipcMain.handle("iptv:getChannels", (_e, id) => {
   const cache = readIptvCache() || {};
-  return cache[id]?.channels || [];
+  const channels = cache[id]?.channels || [];
+  const hiddenAll = store.get("iptvHidden") || {};
+  const hidden = new Set(hiddenAll[id] || []);
+  if (hidden.size === 0) return channels;
+  return channels.filter((c) => !hidden.has(c.name));
+});
+
+ipcMain.handle("iptv:getHiddenChannels", (_e, id) => {
+  const cache = readIptvCache() || {};
+  const channels = cache[id]?.channels || [];
+  const hiddenAll = store.get("iptvHidden") || {};
+  const hidden = new Set(hiddenAll[id] || []);
+  return channels.filter((c) => hidden.has(c.name));
+});
+
+ipcMain.handle("iptv:getHidden", (_e, sourceId) => {
+  const all = store.get("iptvHidden") || {};
+  return all[sourceId] || [];
+});
+
+ipcMain.handle("iptv:setHidden", (_e, { sourceId, names }) => {
+  const all = store.get("iptvHidden") || {};
+  all[sourceId] = Array.from(new Set(names || []));
+  store.set("iptvHidden", all);
+  return all[sourceId];
+});
+
+ipcMain.handle("iptv:hideChannels", (_e, { sourceId, names }) => {
+  const all = store.get("iptvHidden") || {};
+  const set = new Set(all[sourceId] || []);
+  (names || []).forEach((n) => set.add(n));
+  all[sourceId] = Array.from(set);
+  store.set("iptvHidden", all);
+  return all[sourceId];
+});
+
+ipcMain.handle("iptv:unhideChannels", (_e, { sourceId, names }) => {
+  const all = store.get("iptvHidden") || {};
+  const set = new Set(all[sourceId] || []);
+  (names || []).forEach((n) => set.delete(n));
+  all[sourceId] = Array.from(set);
+  store.set("iptvHidden", all);
+  return all[sourceId];
+});
+
+ipcMain.handle("iptv:unhideAll", (_e, sourceId) => {
+  const all = store.get("iptvHidden") || {};
+  delete all[sourceId];
+  store.set("iptvHidden", all);
+  return [];
 });
 
 ipcMain.handle("iptv:getEpg", async (_e, { sourceId, channel }) => {
