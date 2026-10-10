@@ -1,0 +1,1052 @@
+
+Buscar un comando o acceso directo
+Atrás
+⌥
+Alt
+ArrowLeft
+⌥
+AltGr
+ArrowLeft
+
+Añadir
+Adelante
+⌥
+Alt
+ArrowRight
+⌥
+AltGr
+ArrowRight
+
+Añadir
+Volver a cargar
+⌃
+Control
+r
+F5
+
+Añadir
+Página principal
+⌥
+Alt
+Home
+
+Añadir
+Interrumpir
+
+Añadir
+Volver a cargar sin pasar por la caché
+⌃
+Control
+⇧
+Shift
+r
+⌃
+Control
+F5
+⇧
+Shift
+F5
+
+Añadir
+Volver a cargar borrando la caché
+
+Añadir
+Nueva ventana
+⌃
+Control
+n
+
+Añadir
+Nueva ventana privada
+⌃
+Control
+⇧
+Shift
+n
+
+Añadir
+Cerrar ventana
+⌃
+Control
+⇧
+Shift
+w
+⌥
+Alt
+F4
+
+Añadir
+Nueva pestaña
+⌃
+Control
+t
+
+Añadir
+Cerrar pestaña
+⌃
+Control
+F4
+
+Restablecer
+
+Añadir
+Pestaña siguiente
+⌃
+Control
+PageDown
+
+Añadir
+Pestaña anterior
+⌃
+Control
+PageUp
+
+Añadir
+Seleccionar pestaña 0
+⌃
+Control
+1
+⌃
+Control
+Num1
+
+Añadir
+Seleccionar pestaña 1
+⌃
+Control
+2
+⌃
+Control
+Num2
+
+Añadir
+Seleccionar pestaña 2
+⌃
+Control
+3
+⌃
+Control
+Num3
+
+Añadir
+Seleccionar pestaña 3
+⌃
+Control
+4
+⌃
+Control
+Num4
+
+Añadir
+Seleccionar pestaña 4
+⌃
+Control
+5
+⌃
+Control
+Num5
+
+Añadir
+Seleccionar pestaña 5
+⌃
+Control
+6
+⌃
+Control
+Num6
+
+Añadir
+Seleccionar pestaña 6
+⌃
+Control
+7
+⌃
+Control
+Num7
+
+Añadir
+Seleccionar pestaña 7
+⌃
+Control
+8
+⌃
+Control
+Num8
+
+Añadir
+Seleccionar la última pestaña
+⌃
+Control
+9
+⌃
+Control
+Num9
+
+Añadir
+Duplicar pestaña
+
+Añadir
+Volver a abrir pestaña cerrada
+⌃
+Control
+⇧
+Shift
+t
+
+Añadir
+Mostrar como pestaña
+
+Añadir
+Pantalla completa
+F11
+
+Añadir
+Salir
+
+Añadir
+Mover pestaña a la posición siguiente
+⌃
+Control
+⇧
+Shift
+PageDown
+
+Añadir
+Mover pestaña a la posición anterior
+⌃
+Control
+⇧
+Shift
+PageUp
+
+Añadir
+Búsqueda
+
+Añadir
+Minimizar ventana
+
+Añadir
+Maximizar ventana
+
+Añadir
+Asignar nombre a ventana…
+
+Añadir
+Abrir en una ventana de PWA
+
+Añadir
+Mover pestaña a una nueva ventana
+
+Añadir
+Nueva vista dividida con la pestaña actual
+⌃
+Control
+⌥
+Alt
+t
+
+Añadir
+Activar/desactivar pestañas verticales
+
+Añadir
+Ocultar pestañas
+⌃
+Control
+⇧
+Shift
+l
+
+Añadir
+Cambiar a la siguiente pestaña
+⌃
+Control
+Tab
+
+Añadir
+Cambiar a la pestaña anterior
+⌃
+Control
+⇧
+Shift
+Tab
+
+Añadir
+Copiar URL
+
+Añadir
+Abrir en Brave
+
+Añadir
+Ajustes de aplicación web
+
+Añadir
+Información de aplicación web
+
+Añadir
+Añadir nueva pestaña al grupo
+⌥
+Alt
+⇧
+Shift
+c
+
+Añadir
+Crear nuevo grupo de pestañas
+⌥
+Alt
+⇧
+Shift
+p
+
+Añadir
+Enfocar el siguiente grupo de pestañas
+⌥
+Alt
+⇧
+Shift
+x
+
+Añadir
+Enfocar el anterior grupo de pestañas
+⌥
+Alt
+⇧
+Shift
+z
+
+Añadir
+Cerrar grupo de pestañas
+⌥
+Alt
+⇧
+Shift
+w
+
+Añadir
+Añadir esta pestaña a marcadores…
+⌃
+Control
+d
+
+Añadir
+Añadir todas las pestañas a marcadores…
+⌃
+Control
+⇧
+Shift
+d
+
+Añadir
+Ver código fuente
+⌃
+Control
+u
+
+Añadir
+Imprimir
+⌃
+Control
+p
+
+Añadir
+Guardar página como…
+⌃
+Control
+s
+
+Añadir
+Enviar URL de la página por correo electrónico
+
+Añadir
+Impresión básica
+⌃
+Control
+⇧
+Shift
+p
+
+Añadir
+Traducir…
+
+Añadir
+Seleccionar dispositivo de salida de contenido multimedia
+
+Añadir
+Silenciar sitio
+
+Añadir
+Anclar pestaña
+
+Añadir
+Agrupar pestaña
+
+Añadir
+Generador de código QR
+
+Añadir
+Cerrar pestañas a la derecha
+
+Añadir
+Cerrar las demás pestañas
+
+Añadir
+Nueva pestaña a la derecha
+
+Añadir
+Ofertas y recompensas de la página
+
+Añadir
+Centro de intercambio
+
+Añadir
+Captura de pantalla del Centro de intercambio
+⌃
+Control
+⇧
+Shift
+s
+
+Añadir
+Mostrar gestor de contraseñas
+
+Añadir
+Mostrar formas de pago
+
+Añadir
+Mostrar información de contacto
+
+Añadir
+Abrir perfil de invitado
+
+Añadir
+Añadir nuevo perfil
+
+Añadir
+Cortar
+
+Añadir
+Copiar
+
+Añadir
+Pegar
+
+Añadir
+Buscar…
+⌃
+Control
+f
+
+Añadir
+Buscar siguiente
+⌃
+Control
+g
+F3
+
+Añadir
+Buscar anterior
+⌃
+Control
+⇧
+Shift
+g
+⇧
+Shift
+F3
+
+Añadir
+Cerrar búsqueda o detener
+Escape
+
+Añadir
+Acercar
+⌃
+Control
+=
+⌃
+Control
+NumAdd
+⌃
+Control
+⇧
+Shift
+=
+
+Añadir
+Restablecer zoom
+⌃
+Control
+0
+⌃
+Control
+Num0
+
+Añadir
+Alejar
+⌃
+Control
+-
+⌃
+Control
+NumSubtract
+⌃
+Control
+⇧
+Shift
+-
+
+Añadir
+Destacar barra de herramientas
+⌥
+Alt
+⇧
+Shift
+t
+
+Añadir
+Destacar ubicación
+⌃
+Control
+l
+⌥
+Alt
+d
+
+Añadir
+Destacar búsqueda
+BrowserSearch
+⌃
+Control
+e
+⌃
+Control
+k
+
+Añadir
+Destacar barra de menús
+F10
+⌥
+AltGr
+⌥
+Alt
+
+Añadir
+Destacar panel siguiente
+F6
+
+Añadir
+Destacar panel anterior
+⇧
+Shift
+F6
+
+Añadir
+Destacar marcadores
+⌥
+Alt
+⇧
+Shift
+b
+
+Añadir
+Destacar ventana emergente inactiva para accesibilidad
+⌥
+Alt
+⇧
+Shift
+a
+
+Añadir
+Destacar panel de contenido web
+⌃
+Control
+F6
+
+Añadir
+Abrir archivo
+⌃
+Control
+o
+
+Añadir
+Crear acceso directo
+
+Añadir
+Herramientas para desarrolladores
+⌃
+Control
+⇧
+Shift
+i
+
+Añadir
+Consola JavaScript
+⌃
+Control
+⇧
+Shift
+j
+
+Añadir
+Inspeccionar dispositivos
+
+Añadir
+Notificar un problema
+
+Añadir
+Mostrar barra de marcadores
+⌃
+Control
+⇧
+Shift
+b
+
+Añadir
+Mostrar historial
+⌃
+Control
+h
+
+Añadir
+Mostrar gestor de marcadores
+⌃
+Control
+⇧
+Shift
+o
+
+Añadir
+Historial de descargas
+⌃
+Control
+j
+
+Añadir
+Borrar datos de navegación
+⌃
+Control
+⇧
+Shift
+Delete
+
+Añadir
+Importar configuración
+
+Añadir
+Opciones
+
+Añadir
+Editar motores de búsqueda
+
+Añadir
+Gestor de contraseñas
+
+Añadir
+Información de Brave
+
+Añadir
+Mostrar ayuda
+F1
+
+Añadir
+Mostrar menú de aplicaciones
+⌥
+Alt
+e
+⌥
+Alt
+f
+
+Añadir
+Gestionar extensiones
+
+Añadir
+Inspección con herramientas de desarrollo
+⌃
+Control
+⇧
+Shift
+c
+
+Añadir
+Actualizar Brave
+
+Añadir
+Mostrar menú de avatar
+⌃
+Control
+⇧
+Shift
+m
+
+Añadir
+Activar/desactivar herramientas para desarrolladores
+F12
+
+Añadir
+Hacer captura de pantalla
+
+Añadir
+Activar/desactivar barra de herramientas a pantalla completa
+
+Añadir
+Activar/desactivar eventos de Javascript relacionados con Apple
+
+Añadir
+Instalar PWA
+
+Añadir
+Mostrar página de gestión
+
+Añadir
+Pegar e ir a $1
+
+Añadir
+Mostrar URL completas
+
+Añadir
+Activar/desactivar navegación mediante el símbolo de intercalación
+F7
+
+Añadir
+Novedades
+
+Añadir
+Mostrar ajustes de rendimiento
+
+Añadir
+Administrador de tareas
+⇧
+Shift
+Escape
+
+Añadir
+Modo Lectura
+⌥
+Alt
+⇧
+Shift
+r
+
+Añadir
+Abrir todos los marcadores
+
+Añadir
+Barra de marcadores: Abrir todo en una ventana nueva
+
+Añadir
+Barra de marcadores: Abrir todo en una ventana de incógnito
+
+Añadir
+Abrir en una ventana privada
+
+Añadir
+Barra de marcadores: Abrir todo en un nuevo grupo de pestañas
+
+Añadir
+Barra de marcadores: Cambiar nombre de carpeta
+
+Añadir
+Barra de marcadores: Editar
+
+Añadir
+Barra de marcadores: Eliminar
+
+Añadir
+Barra de marcadores: Deshacer acción
+
+Añadir
+Barra de marcadores: Rehacer acción
+
+Añadir
+Barra de marcadores: Añadir nuevo marcador
+
+Añadir
+Barra de marcadores: Carpeta nueva
+
+Añadir
+Abrir administrador de marcadores
+
+Añadir
+Barra de marcadores: Mostrar siempre
+
+Añadir
+Mostrar acceso directo de aplicaciones
+
+Añadir
+Barra de marcadores: Mostrar marcadores gestionados
+
+Añadir
+Barra de marcadores: Añadir a la barra de marcadores
+
+Añadir
+Barra de marcadores: Eliminar de la barra de marcadores
+
+Añadir
+Permitir que Brave se ejecute en segundo plano
+
+Añadir
+Búsqueda de pestañas
+⌃
+Control
+⇧
+Shift
+a
+
+Añadir
+Cerrar búsqueda de pestañas
+
+Añadir
+Depurar: Activar/desactivar modo tableta
+
+Añadir
+Depurar: Imprimir árbol de vistas
+
+Añadir
+Activar/desactivar subtítulos en directo
+
+Añadir
+Recompensas de Brave
+
+Añadir
+Nueva conexión de Tor para este sitio
+
+Añadir
+Nueva ventana privada con Tor
+⌥
+Alt
+⇧
+Shift
+n
+
+Añadir
+Brave Sync
+
+Añadir
+Wallet
+
+Añadir
+Activar/desactivar Leo IA
+
+Añadir
+Informar de un sitio roto
+
+Añadir
+Mostrar panel Cartera de Brave
+
+Añadir
+Cerrar panel Cartera de Brave
+
+Añadir
+Mostrar panel VPN de Brave
+
+Añadir
+Activar/desactivar botón de VPN de Brave de la barra de herramientas
+
+Añadir
+Enviar comentarios sobre VPN de Brave
+
+Añadir
+Acerca de la VPN de Brave
+
+Añadir
+Gestionar plan de VPN de Brave
+
+Añadir
+Activar/desactivar VPN de Brave
+
+Añadir
+Copiar enlace limpio
+
+Añadir
+Activar/desactivar silencio de pestañas
+⌃
+Control
+m
+
+Añadir
+Activar/desactivar posición de barra lateral
+
+Añadir
+Alternar panel lateral actual
+⌃
+Control
+b
+
+Añadir
+Forzar pegado
+
+Añadir
+Activar/desactivar título de ventana de pestañas verticales
+
+Añadir
+Configurar Noticias de Brave
+
+Añadir
+Configurar accesos directos
+
+Añadir
+Mostrar Brave Talk
+
+Añadir
+Activar/desactivar el icono en bandeja de la VPN de Brave
+
+Añadir
+Mostrar siempre la barra de marcadores
+
+Añadir
+Mostrar barra de marcadores en nueva página de pestañas
+
+Añadir
+Ocultar barra de marcadores
+
+Añadir
+Activar/desactivar escudos
+
+Añadir
+Activar/desactivar Javascript
+
+Añadir
+Mostrar burbuja de lista de reproducción
+
+Añadir
+Agrupar pestañas por origen actual
+
+Añadir
+Mover grupo a ventana nueva
+
+Añadir
+Cerrar pestañas duplicadas
+
+Añadir
+Cerrar pestañas a la izquierda
+
+Añadir
+Cerrar las pestañas no fijadas
+
+Añadir
+Añadir todas las pestañas a un grupo nuevo
+
+Añadir
+Cerrar todas las pestañas duplicadas
+
+Añadir
+Activar/desactivar pestañas verticales expandidas
+
+Añadir
+Silenciar todas las pestañas
+
+Añadir
+Silenciar las demás pestañas
+
+Añadir
+Activar sonido de todas las pestañas
+
+Añadir
+Subir hasta la parte superior de la pestaña
+
+Añadir
+Bajar hasta la parte inferior de la pestaña
+
+Añadir
+Enviar pestaña a uno mismo
+
+Añadir
+Abrir Chat de IA
+
+Añadir
+Activar o desactivar la visibilidad del botón "Todos los marcadores"
+
+Añadir
+Comandos rápidos
+⌃
+Control
+Space
+
+Añadir
+Agrupar pestañas desagrupadas
+
+Añadir
+Desagrupar grupo de pestañas actual
+
+Añadir
+Eliminar pestaña del grupo actual
+
+Añadir
+Desagrupar todas las pestañas
+
+Añadir
+Ponle un nombre a este grupo
+
+Añadir
+Nueva pestaña en el grupo
+
+Añadir
+Activar/desactivar grupo expandido
+
+Añadir
+Cerrar pestañas desagrupadas
+
+Añadir
+Cerrar pestañas que no pertenecen al grupo actual
+
+Añadir
+Cerrar grupo
+
+Añadir
+Exportar todos los marcadores
+
+Añadir
+Traer todas las pestañas a esta ventana
+
+Añadir
+Nueva vista dividida
+
+Añadir
+Abrir en vista dividida
+
+Añadir
+No dividir pestañas
+
+Añadir
+Intercambiar posiciones de pestañas
+
+Añadir
+Mostrar burbuja de Wayback Machine
+
+Añadir
+Mostrar aplicaciones
+
+Añadir
+Nuevo correo electrónico alternativo
+
+Añadir
+Correos electrónicos alternativos
+
+Añadir
+Activar modo de enfoque
+
+Añadir
+Nuevo contenedor temporal
+
+Añadir
+No mostrar para este sitio
+
+Añadir
+Desactivar el ajuste de la configuración de privacidad
+
+Añadir
+Alternar panel lateral de marcadores
+
+Añadir
+Alternar panel lateral de lista de lectura
+
+Añadir
+Alternar panel lateral de Playlist
+
+Añadir
+Bloquear elementos
+
+Añadir
+
+Restablecer todo a su valor predeterminado
