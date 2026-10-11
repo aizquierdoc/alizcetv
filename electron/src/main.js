@@ -26,7 +26,6 @@ const store = new Store({
     coinopsPath: "",
     mpvPath: "",
     mpvTheme: "awesome-osc",
-    continueWatching: [],
     platformModes: {},
     tmdbApiKey: "",
     lastScanAt: null,
@@ -244,20 +243,6 @@ ipcMain.handle("smb:listFolder", async (_e, { share, folder }) => {
       resolve({ items });
     });
   });
-});
-
-// ---------- Continue Watching persistence ----------
-ipcMain.handle("cw:get", () => store.get("continueWatching") || []);
-ipcMain.handle("cw:upsert", (_e, entry) => {
-  const list = store.get("continueWatching") || [];
-  const idx = list.findIndex((x) => x.path === entry.path);
-  const now = Date.now();
-  const next = { ...entry, updatedAt: now };
-  if (idx >= 0) list.splice(idx, 1);
-  list.unshift(next);
-  const trimmed = list.slice(0, 10);
-  store.set("continueWatching", trimmed);
-  return trimmed;
 });
 
 // ---------- CoinOps launcher ----------

@@ -1,42 +1,6 @@
 // Mock data for AlizceTV prototype
 // Todas las imagenes se sirven desde /public/mock/ (locales, sin Unsplash).
 
-export const continueWatching = [
-  {
-    id: "cw-1",
-    title: "Dune: Parte Dos",
-    subtitle: "SMB Películas · 1080p",
-    progress: 68,
-    remaining: "38 min restantes",
-    image: "./mock/cw-dune.jpg",
-    path: "//192.168.1.200/Peliculas/Dune.Parte.Dos.2024.mkv",
-    audio: ["Español (5.1 Dolby)", "English (Atmos)"],
-    subs: ["Español (SRT)", "English (Forced)"],
-  },
-  {
-    id: "cw-2",
-    title: "The Last of Us · S01E05",
-    subtitle: "SMB Series · 4K HDR",
-    progress: 42,
-    remaining: "24 min restantes",
-    image: "./mock/cw-tlou.jpg",
-    path: "//192.168.1.200/Series/TLOU/S01E05.mkv",
-    audio: ["Español Castellano (Stereo)"],
-    subs: [],
-  },
-  {
-    id: "cw-3",
-    title: "Blade Runner 2049",
-    subtitle: "SMB Películas · Remux",
-    progress: 88,
-    remaining: "12 min restantes",
-    image: "./mock/cw-bladerunner.jpg",
-    path: "//192.168.1.200/Peliculas/BladeRunner2049.mkv",
-    audio: ["Español (DTS-HD)", "English (TrueHD)"],
-    subs: ["Español Completo", "Español Forzado", "English SDH"],
-  },
-];
-
 export const streamingPlatforms = [
   { id: "netflix",   label: "Netflix",     bg: "#E50914", url: "https://www.netflix.com",   short: "N" },
   { id: "prime",     label: "Prime Video", bg: "#00A8E1", url: "https://www.primevideo.com", short: "prime" },

@@ -15,11 +15,6 @@ contextBridge.exposeInMainWorld("alizce", {
     listFolder: (share, folder) => ipcRenderer.invoke("smb:listFolder", { share, folder }),
   },
 
-  cw: {
-    get: () => ipcRenderer.invoke("cw:get"),
-    upsert: (entry) => ipcRenderer.invoke("cw:upsert", entry),
-  },
-
   coinops: {
     launch: () => ipcRenderer.invoke("coinops:launch"),
   },

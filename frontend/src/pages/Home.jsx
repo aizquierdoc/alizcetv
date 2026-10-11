@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "../components/TopBar";
-import ContinueWatching from "../components/ContinueWatching";
 import StreamingGrid from "../components/StreamingGrid";
 import NetworkSources from "../components/NetworkSources";
 import ArcadeTile from "../components/ArcadeTile";
@@ -23,7 +22,6 @@ export default function Home() {
     return () => clearTimeout(t);
   }, [focusFirst]);
 
-  const openPlayer = (item) => navigate("/player", { state: { item } });
   const openFolder = (folder) => navigate(`/folder/${folder.id}`, { state: { share: folder.share || folder.name } });
   const launchArcade = async () => {
     if (isElectron) {
@@ -37,9 +35,8 @@ export default function Home() {
     <div data-testid="home-screen">
       <TopBar />
       <main className="relative px-10 lg:px-14 pb-24">
-        <ContinueWatching onPlay={openPlayer} />
-        <StreamingGrid onOpenIptv={openIptv} />
         <NetworkSources onOpenFolder={openFolder} />
+        <StreamingGrid onOpenIptv={openIptv} />
         <ArcadeTile onLaunch={launchArcade} />
       </main>
       <GamepadLegend />

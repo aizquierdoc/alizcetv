@@ -1,6 +1,5 @@
 // AlizceTV service layer — abstracts Electron APIs with mock fallback.
 import {
-  continueWatching as mockCW,
   folderContents,
   networkFolders as mockNetworkFolders,
   DEMO_VIDEO,
@@ -73,12 +72,6 @@ export const smbService = {
     }));
     return { items };
   },
-};
-
-// ----- Continue Watching -----
-export const cwService = {
-  async get() { if (api) return (await api.cw.get()).slice(0, 3); return mockCW; },
-  async save(entry) { if (api) return api.cw.upsert(entry); return [entry]; },
 };
 
 // ----- Streaming platforms -----
