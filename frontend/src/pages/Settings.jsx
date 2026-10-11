@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, FolderSearch, Save, HardDrive, Film, Gamepad2, Check, Tv, Key, RefreshCw, Loader2, ExternalLink, Radio } from "lucide-react";
 import TopBar from "../components/TopBar";
 import Focusable from "../components/Focusable";
-import GamepadLegend from "../components/GamepadLegend";
 import ButtonMappingSection from "../components/ButtonMappingSection";
 import IptvChannelManager from "../components/IptvChannelManager";
 import { useFocusEngine } from "../hooks/useFocusEngine";
@@ -415,7 +414,6 @@ export default function Settings() {
           </span>
         </div>
       </main>
-      <GamepadLegend />
     </div>
   );
 }

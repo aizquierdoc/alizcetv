@@ -5,7 +5,6 @@ import {
   AudioLines, Maximize2, Volume2, Film,
 } from "lucide-react";
 import Focusable from "../components/Focusable";
-import GamepadLegend from "../components/GamepadLegend";
 import { useFocusEngine } from "../hooks/useFocusEngine";
 import { aspectRatios, DEMO_VIDEO } from "../data/mockData";
 import { mpvService, isElectron } from "../services/alizceApi";
@@ -301,8 +300,6 @@ export default function VideoPlayer() {
           )}
         </div>
       </div>
-
-      <GamepadLegend />
     </div>
   );
 }

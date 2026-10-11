@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Radio, Plus, Trash2, RefreshCw, Loader2, Play, AlertTriangle, Star } from "lucide-react";
 import TopBar from "../components/TopBar";
 import Focusable from "../components/Focusable";
-import GamepadLegend from "../components/GamepadLegend";
 import { useFocusEngine } from "../hooks/useFocusEngine";
 import { iptvService, mpvService, isElectron, systemService } from "../services/alizceApi";
 import { useConfirm } from "../components/ConfirmProvider";
@@ -358,7 +357,6 @@ export default function Iptv() {
           </div>
         )}
       </main>
-      <GamepadLegend />
     </div>
   );
 }

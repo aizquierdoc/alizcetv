@@ -4,7 +4,6 @@ import TopBar from "../components/TopBar";
 import StreamingGrid from "../components/StreamingGrid";
 import NetworkSources from "../components/NetworkSources";
 import ArcadeTile from "../components/ArcadeTile";
-import GamepadLegend from "../components/GamepadLegend";
 import { useFocusEngine } from "../hooks/useFocusEngine";
 import { coinopsService, isElectron, systemService } from "../services/alizceApi";
 
@@ -39,7 +38,6 @@ export default function Home() {
         <StreamingGrid onOpenIptv={openIptv} />
         <ArcadeTile onLaunch={launchArcade} />
       </main>
-      <GamepadLegend />
     </div>
   );
 }

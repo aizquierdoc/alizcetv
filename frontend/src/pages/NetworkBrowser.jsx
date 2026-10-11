@@ -3,7 +3,6 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ArrowLeft, Play, Film, Folder, AlertTriangle, Loader2 } from "lucide-react";
 import TopBar from "../components/TopBar";
 import Focusable from "../components/Focusable";
-import GamepadLegend from "../components/GamepadLegend";
 import { useFocusEngine } from "../hooks/useFocusEngine";
 import { smbService, isElectron, systemService } from "../services/alizceApi";
 
@@ -198,7 +197,6 @@ export default function NetworkBrowser() {
           </div>
         )}
       </main>
-      <GamepadLegend />
     </div>
   );
 }

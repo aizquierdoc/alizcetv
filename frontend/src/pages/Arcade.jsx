@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Gamepad2, Play } from "lucide-react";
 import TopBar from "../components/TopBar";
 import Focusable from "../components/Focusable";
-import GamepadLegend from "../components/GamepadLegend";
 import { useFocusEngine } from "../hooks/useFocusEngine";
 import { systemService } from "../services/alizceApi";
 
@@ -98,7 +97,6 @@ export default function Arcade() {
           ))}
         </div>
       </main>
-      <GamepadLegend />
     </div>
   );
 }
