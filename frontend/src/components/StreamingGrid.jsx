@@ -1,7 +1,7 @@
 import React from "react";
 import Focusable from "./Focusable";
 import { streamingPlatforms } from "../data/mockData";
-import { ExternalLink, Tv, Radio } from "lucide-react";
+import { Tv, Radio } from "lucide-react";
 import { platformService } from "../services/alizceApi";
 
 export default function StreamingGrid({ onOpenIptv }) {
@@ -19,52 +19,37 @@ export default function StreamingGrid({ onOpenIptv }) {
         </span>
       </div>
 
-      <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-4 lg:gap-5">
+      <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-11 gap-3 lg:gap-4">
         {streamingPlatforms.map((p) => (
           <Focusable
             key={p.id}
             id={`stream-${p.id}`}
             testId={`tile-${p.id}`}
             onSelect={() => handleLaunch(p.id)}
-            className="relative rounded-2xl overflow-hidden aspect-[16/10] group"
-            style={{ background: p.bg }}
+            className="relative rounded-2xl overflow-hidden aspect-square group bg-slate-900"
           >
-            <div
-              className="absolute inset-0 opacity-30"
-              style={{
-                background:
-                  "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.35), transparent 60%)",
-              }}
+            <img
+              src={p.logo}
+              alt={p.label}
+              className="w-full h-full object-cover"
+              loading="lazy"
             />
-            <div className="relative h-full w-full flex flex-col items-center justify-center gap-2 p-3">
-              <span className="font-title text-2xl lg:text-3xl text-white drop-shadow-lg uppercase tracking-wider">
-                {p.short}
-              </span>
-              <span className="text-[10px] font-mono tracking-[0.25em] uppercase text-white/80">
-                {p.label}
-              </span>
-            </div>
-            <ExternalLink size={12} className="absolute top-2 right-2 text-white/60" />
           </Focusable>
         ))}
 
-        {/* IPTV tile as 10th platform */}
+        {/* IPTV tile as 11th slot */}
         <Focusable
           id="stream-iptv"
           testId="tile-iptv"
           onSelect={() => onOpenIptv && onOpenIptv()}
-          className="relative rounded-2xl overflow-hidden aspect-[16/10] group"
-          style={{
-            background:
-              "radial-gradient(circle at 30% 20%, rgba(251,191,36,0.5), transparent 60%), linear-gradient(135deg, #78350f 0%, #431407 100%)",
-          }}
+          className="relative rounded-2xl overflow-hidden aspect-square group bg-slate-900"
         >
-          <div className="relative h-full w-full flex flex-col items-center justify-center gap-2 p-3">
-            <Radio size={28} className="text-amber-200 drop-shadow-lg" />
-            <span className="text-[10px] font-mono tracking-[0.25em] uppercase text-white/90">
-              IPTV
-            </span>
-          </div>
+          <img
+            src="./logos/iptv.jpg"
+            alt="IPTV"
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
         </Focusable>
       </div>
     </section>

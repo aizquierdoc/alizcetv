@@ -75,4 +75,12 @@ module.exports = {
     defaultMode: "cinema",
     browser: "brave",
   },
+  spotify: {
+    label: "Spotify",
+    web: "https://open.spotify.com",
+    protocol: null,
+    hasUwp: false,
+    defaultMode: "cinema",
+    browser: "brave",
+  },
 };

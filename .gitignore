@@ -112,3 +112,11 @@ electron/package-lock.json
 _scripts_iptv_manager/
 backups/
 frontend/public/index.html.bak
+
+# Backups locales (no subir al repo)
+*.bak
+*.bak2
+*.bak3
+*.bak4
+*.bak5
+*.bak6

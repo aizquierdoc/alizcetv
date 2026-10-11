@@ -2,15 +2,16 @@
 // Todas las imagenes se sirven desde /public/mock/ (locales, sin Unsplash).
 
 export const streamingPlatforms = [
-  { id: "netflix",   label: "Netflix",     bg: "#E50914", url: "https://www.netflix.com",   short: "N" },
-  { id: "prime",     label: "Prime Video", bg: "#00A8E1", url: "https://www.primevideo.com", short: "prime" },
-  { id: "disney",    label: "Disney+",     bg: "#113CCF", url: "https://www.disneyplus.com", short: "D+" },
-  { id: "hbo",       label: "HBO Max",     bg: "#5822B4", url: "https://www.max.com",       short: "MAX" },
-  { id: "movistar",  label: "Movistar+",   bg: "#002B49", url: "https://ver.movistarplus.es", short: "M+" },
-  { id: "apple",     label: "Apple TV+",   bg: "#1C1C1E", url: "https://tv.apple.com",      short: "tv+" },
-  { id: "youtube",   label: "YouTube",     bg: "#FF0000", url: "https://www.youtube.com/tv", short: "▶" },
-  { id: "twitch",    label: "Twitch",      bg: "#9146FF", url: "https://www.twitch.tv",     short: "tv" },
-  { id: "filmin",    label: "Filmin",      bg: "#000000", url: "https://www.filmin.es",     short: "F" },
+  { id: "netflix",  label: "Netflix",     url: "https://www.netflix.com",     logo: "./logos/netflix.jpg"  },
+  { id: "prime",    label: "Prime Video", url: "https://www.primevideo.com",  logo: "./logos/prime.jpg"    },
+  { id: "disney",   label: "Disney+",     url: "https://www.disneyplus.com",  logo: "./logos/disney.jpg"   },
+  { id: "hbo",      label: "HBO Max",     url: "https://www.max.com",         logo: "./logos/max.jpg"      },
+  { id: "movistar", label: "Movistar+",   url: "https://ver.movistarplus.es", logo: "./logos/movistar.jpg" },
+  { id: "apple",    label: "Apple TV+",   url: "https://tv.apple.com",        logo: "./logos/apple.jpg"    },
+  { id: "youtube",  label: "YouTube",     url: "https://www.youtube.com/tv",  logo: "./logos/youtube.jpg"  },
+  { id: "twitch",   label: "Twitch",      url: "https://www.twitch.tv",       logo: "./logos/twitch.jpg"   },
+  { id: "filmin",   label: "Filmin",      url: "https://www.filmin.es",       logo: "./logos/filmin.jpg"   },
+  { id: "spotify",  label: "Spotify",     url: "https://open.spotify.com",    logo: "./logos/spotify.jpg"  },
 ];
 
 export const networkFolders = [
