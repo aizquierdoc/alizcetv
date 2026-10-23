@@ -1,45 +1,14 @@
 ﻿(function () {
-  if (window.top !== window.self) return; // solo en el frame principal
-
+  if (window.top !== window.self) return; 
   let bloqueado = false;
 
   function cerrarVentana() {
-    try {
-      chrome.runtime.sendMessage({ action: "closeWindow" });
-    } catch (e) {}
+    try { chrome.runtime.sendMessage({ action: "closeWindow" }); } catch (e) {}
   }
 
-  function decidir() {
-    let navego = false;
-    const onPop = () => { navego = true; };
-
-    window.addEventListener("popstate", onPop, { once: true });
-    window.addEventListener("hashchange", onPop, { once: true });
-
-    const urlAntes = location.href;
-
-    try {
-      history.back();
-    } catch (e) {
-      window.removeEventListener("popstate", onPop);
-      window.removeEventListener("hashchange", onPop);
-      cerrarVentana();
-      return;
-    }
-
-    setTimeout(() => {
-      window.removeEventListener("popstate", onPop);
-      window.removeEventListener("hashchange", onPop);
-      // Si no hubo popstate/hashchange Y la URL no cambio → no habia historial
-      if (!navego && location.href === urlAntes) {
-        cerrarVentana();
-      }
-    }, 250);
-  }
-
-  window.addEventListener("keydown", (e) => {
-    if (!e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) return;
-    if (!(e.key === "w" || e.key === "W" || e.code === "KeyW")) return;
+  // Interceptar el botón derecho (mousedown con button === 2)
+  window.addEventListener("mousedown", (e) => {
+    if (e.button !== 2) return; // Solo botón derecho
 
     e.preventDefault();
     e.stopPropagation();
@@ -47,7 +16,52 @@
 
     if (bloqueado) return;
     bloqueado = true;
-    decidir();
-    setTimeout(() => { bloqueado = false; }, 400);
+
+    const urlAntes = location.href;
+
+    // 1. Lanzamos un evento de contexto "limpio" para que la web 
+    // (ej. YouTube TV) reaccione si le da la gana.
+    const evContext = new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      button: 2,
+      buttons: 2,
+      clientX: e.clientX,
+      clientY: e.clientY
+    });
+    
+    // Lo disparamos en el elemento donde se hizo clic
+    e.target.dispatchEvent(evContext);
+
+    // 2. Esperamos a ver si la web hizo algo
+    setTimeout(() => {
+      if (location.href !== urlAntes) {
+        bloqueado = false;
+        return; // La web reaccionó (cambió de URL)
+      }
+
+      // 3. Si no hizo nada, hacemos history.back()
+      try {
+        history.back();
+      } catch (err) {
+        cerrarVentana();
+        bloqueado = false;
+        return;
+      }
+
+      // 4. Si no hay historial, cerramos
+      setTimeout(() => {
+        if (location.href === urlAntes) {
+          cerrarVentana();
+        }
+        bloqueado = false;
+      }, 300);
+    }, 300);
+  }, true);
+
+  // Evitar que el menú contextual nativo de Brave salga
+  window.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
   }, true);
 })();

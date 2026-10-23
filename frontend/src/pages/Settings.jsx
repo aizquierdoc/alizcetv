@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, FolderSearch, Save, HardDrive, Film, Gamepad2, Check, Tv, Key, RefreshCw, Loader2, ExternalLink, Radio } from "lucide-react";
 import TopBar from "../components/TopBar";
@@ -6,7 +6,7 @@ import Focusable from "../components/Focusable";
 import ButtonMappingSection from "../components/ButtonMappingSection";
 import IptvChannelManager from "../components/IptvChannelManager";
 import { useFocusEngine } from "../hooks/useFocusEngine";
-import { settingsService, platformService, tmdbService, isElectron, systemService } from "../services/alizceApi";
+import { settingsService, platformService, tmdbService, isElectron, systemService, juegoService } from "../services/alizceApi";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -16,6 +16,8 @@ export default function Settings() {
   const [tmdbKey, setTmdbKey] = useState("");
   const [tmdbStatus, setTmdbStatus] = useState({ hasKey: false, lastScanAt: null, running: false });
   const [scanProgress, setScanProgress] = useState(null);
+  const [juegos, setJuegos] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const { focusFirst } = useFocusEngine({
     enabled: true,
@@ -30,6 +32,7 @@ export default function Settings() {
     });
     platformService.list().then(setPlatforms);
     tmdbService.status().then(setTmdbStatus);
+    refreshJuegos();
 
     const off = tmdbService.onProgress((msg) => {
       if (msg.type === "start") setScanProgress({ done: 0, total: 0, file: "Iniciando…" });
@@ -37,6 +40,7 @@ export default function Settings() {
       if (msg.type === "complete") {
         setScanProgress(null);
         tmdbService.status().then(setTmdbStatus);
+    refreshJuegos();
       }
       if (msg.type === "error") setScanProgress(null);
     });
@@ -46,6 +50,10 @@ export default function Settings() {
   }, [focusFirst]);
 
   const update = (patch) => setSettings((s) => ({ ...s, ...patch }));
+  const refreshJuegos = async () => {
+    const list = await juegoService.list();
+    setJuegos(list || []);
+  };
 
   const pickFile = async (field, filters, title) => {
     const file = await settingsService.pickFile({ title, filters });
@@ -102,7 +110,7 @@ export default function Settings() {
 
         {!isElectron && (
           <div className="mb-8 glass rounded-2xl p-4 border border-amber-400/30 bg-amber-500/5 text-amber-200 text-sm">
-            Estás viendo la demo web. Para que los ajustes de SMB, CoinOps y MPV
+            Estás viendo la demo web. Para que los ajustes de SMB, Juegos y MPV
             tengan efecto real, abre AlizceTV desde el ejecutable de Windows.
           </div>
         )}
@@ -299,33 +307,89 @@ export default function Settings() {
           </div>
         </section>
 
-        {/* CoinOps */}
+
+        {/* Juegos */}
         <section className="mb-10">
-          <h3 className="font-title text-xl text-white tracking-widest uppercase mb-5 flex items-center gap-3">
-            <Gamepad2 size={20} className="text-pink-400" /> CoinOps Arcade
+          <h3 className="font-title text-xl text-white tracking-widest uppercase mb-5 flex items-center justify-between">
+            <span className="flex items-center gap-3">
+              <Gamepad2 size={20} className="text-pink-400" /> Juegos
+            </span>
+            <Focusable
+              id="btn-add-juego"
+              testId="btn-add-juego"
+              onSelect={() => setModalOpen(true)}
+              className="px-5 h-11 rounded-xl bg-pink-500/20 border border-pink-400/40 text-pink-200 flex items-center gap-2 font-mono tracking-widest uppercase text-sm"
+            >
+              + Añadir juego
+            </Focusable>
           </h3>
-          <div className="glass rounded-2xl p-6 space-y-4">
-            <Field label="Ruta de CoinOps.exe" hint="El ejecutable que lanzará AlizceTV al pulsar en 'Arcade'">
-              <div className="flex gap-3">
-                <input
-                  data-testid="input-coinops-path"
-                  readOnly
-                  placeholder="Sin configurar"
-                  className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm tracking-wider"
-                  value={settings.coinopsPath || ""}
-                />
-                <Focusable
-                  id="pick-coinops"
-                  testId="btn-pick-coinops"
-                  onSelect={() => pickFile("coinopsPath", [{ name: "Ejecutables", extensions: ["exe"] }], "Selecciona CoinOps.exe")}
-                  className="px-5 rounded-xl bg-pink-500/20 border border-pink-400/40 text-pink-200 flex items-center gap-2 font-mono tracking-widest uppercase text-sm"
-                >
-                  <FolderSearch size={16} /> Examinar
-                </Focusable>
+          <div className="glass rounded-2xl p-6">
+            {juegos.length === 0 ? (
+              <p className="text-xs text-slate-500 font-mono tracking-wider py-6 text-center">
+                Sin juegos configurados. Pulsa "Añadir juego".
+              </p>
+            ) : (
+              <div className="divide-y divide-white/5">
+                {juegos.map((j) => (
+                  <div key={j.id} className="flex items-center gap-4 py-4">
+                    <div className="w-16 h-20 rounded-lg overflow-hidden bg-slate-800 flex items-center justify-center shrink-0">
+                      {j.cover ? (
+                        <img src={`file://${j.cover.replace(/\\/g, "/")}`} alt={j.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <Gamepad2 size={24} className="text-slate-500" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-title text-base text-white uppercase tracking-wider truncate">
+                        {j.title}
+                      </div>
+                      <div className="text-[10px] font-mono tracking-widest text-pink-300 uppercase">
+                        {j.type === "arcade" ? "Arcade" : "Otro"}
+                      </div>
+                      <div className="text-[10px] font-mono tracking-widest text-slate-500 truncate">
+                        {j.path}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <Focusable
+                        id={`change-cover-${j.id}`}
+                        testId={`btn-change-cover-${j.id}`}
+                        onSelect={async () => {
+                          const path = await juegoService.pickCover();
+                          if (path) {
+                            const res = await juegoService.setCover({ id: j.id, coverSource: path });
+                            if (res?.ok) refreshJuegos();
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-[10px] font-mono tracking-widest uppercase border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10"
+                      >
+                        Cambiar carátula
+                      </Focusable>
+                      <Focusable
+                        id={`remove-juego-${j.id}`}
+                        testId={`btn-remove-juego-${j.id}`}
+                        onSelect={async () => {
+                          await juegoService.remove(j.id);
+                          refreshJuegos();
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-[10px] font-mono tracking-widest uppercase border border-red-500/30 text-red-300 hover:bg-red-500/10"
+                      >
+                        Quitar
+                      </Focusable>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </Field>
+            )}
           </div>
         </section>
+
+        {modalOpen && (
+          <AddJuegoModal
+            onClose={() => setModalOpen(false)}
+            onAdded={() => { setModalOpen(false); refreshJuegos(); }}
+          />
+        )}
 
         {/* MPV */}
         <section className="mb-10">
@@ -355,13 +419,7 @@ export default function Settings() {
                 </Focusable>
               </div>
             </Field>
-            <ToggleRow
-              label="CoinOps a toda potencia"
-              hint="Al lanzar CoinOps: minimiza AlizceTV, libera memoria y lanza el emulador con prioridad HIGH en Windows. Recomendado para Chuwi N100."
-              checked={!!settings.coinopsBoost}
-              onToggle={(v) => update({ coinopsBoost: v })}
-              testId="toggle-coinops-boost"
-            />
+
             <ToggleRow
               label="Bloqueador de anuncios en Modo Cine"
               hint="Filtra dominios de anuncios y trackers en YouTube / HBO / Filmin. Más rápido en N100 que una extensión."
@@ -449,6 +507,155 @@ function ToggleRow({ label, hint, checked, onToggle, testId }) {
           className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all ${checked ? "left-7" : "left-1"}`}
         />
       </Focusable>
+    </div>
+  );
+}
+
+function AddJuegoModal({ onClose, onAdded }) {
+  const [path, setPath] = useState("");
+  const [title, setTitle] = useState("");
+  const [type, setType] = useState("otro");
+  const [coverSource, setCoverSource] = useState("");
+  const [coverPreview, setCoverPreview] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handlePickExe = async () => {
+    const p = await juegoService.pickExe();
+    if (!p) return;
+    setPath(p);
+    if (!title) {
+      const name = p.split(/[\\/]/).pop().replace(/\.exe$/i, "");
+      setTitle(name);
+    }
+  };
+
+  const handlePickCover = async () => {
+    const p = await juegoService.pickCover();
+    if (p) {
+      setCoverSource(p);
+      setCoverPreview("file://" + p.replace(/\\/g, "/"));
+    }
+  };
+
+  const handleSave = async () => {
+    console.log("handleSave START", { path, title, type, coverSource });
+    if (!path) { alert("Selecciona un ejecutable"); return; }
+    if (!title.trim()) { alert("Pon un título"); return; }
+    setSaving(true);
+    const res = await juegoService.add({ path, title: title.trim(), type, coverSource });
+    console.log("handleSave RESULT", res);
+    setSaving(false);
+    if (res?.error) { alert(res.error); return; }
+    onAdded && onAdded();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-6">
+      <div className="glass rounded-2xl p-6 w-full max-w-2xl space-y-5">
+        <h3 className="font-title text-2xl text-white uppercase tracking-wider flex items-center gap-3">
+          <Gamepad2 size={22} className="text-pink-400" /> Añadir juego
+        </h3>
+
+        <div>
+          <label className="block text-xs font-mono tracking-[0.25em] uppercase text-slate-400 mb-2">
+            Ejecutable
+          </label>
+          <div className="flex gap-3">
+            <input
+              readOnly
+              placeholder="Selecciona un .exe"
+              className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm tracking-wider"
+              value={path}
+            />
+            <Focusable
+              id="modal-pick-exe"
+              testId="btn-modal-pick-exe"
+              onSelect={handlePickExe}
+              className="px-5 rounded-xl bg-pink-500/20 border border-pink-400/40 text-pink-200 flex items-center gap-2 font-mono tracking-widest uppercase text-sm"
+            >
+              <FolderSearch size={16} /> Examinar
+            </Focusable>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-mono tracking-[0.25em] uppercase text-slate-400 mb-2">
+            Título
+          </label>
+          <input
+            placeholder="Ej: Legacy of Kain Defiance"
+            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm tracking-wider focus:outline-none focus:border-pink-400"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-mono tracking-[0.25em] uppercase text-slate-400 mb-2">
+            Tipo
+          </label>
+          <select
+            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm tracking-wider focus:outline-none focus:border-pink-400"
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+          >
+            <option value="arcade">Arcade</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-xs font-mono tracking-[0.25em] uppercase text-slate-400 mb-2">
+            Carátula
+          </label>
+          <div className="flex gap-3 items-start">
+            <div className="w-20 h-24 rounded-lg overflow-hidden bg-slate-800 flex items-center justify-center shrink-0">
+              {coverPreview ? (
+                <img src={coverPreview} alt="preview" className="w-full h-full object-cover" />
+              ) : (
+                <Gamepad2 size={28} className="text-slate-500" />
+              )}
+            </div>
+            <div className="flex-1 flex gap-2">
+              <Focusable
+                id="modal-pick-cover"
+                testId="btn-modal-pick-cover"
+                onSelect={handlePickCover}
+                className="px-4 py-2 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 flex items-center gap-2 font-mono tracking-widest uppercase text-xs"
+              >
+                <FolderSearch size={14} /> Examinar
+              </Focusable>
+              <Focusable
+                id="modal-clear-cover"
+                testId="btn-modal-clear-cover"
+                onSelect={() => { setCoverSource(""); setCoverPreview(""); }}
+                className="px-4 py-2 rounded-xl bg-slate-700/40 border border-white/10 text-slate-300 flex items-center gap-2 font-mono tracking-widest uppercase text-xs"
+              >
+                Sin carátula
+              </Focusable>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 pt-3 border-t border-white/5">
+          <Focusable
+            id="modal-cancel"
+            testId="btn-modal-cancel"
+            onSelect={onClose}
+            className="px-5 h-11 rounded-xl bg-slate-700/40 border border-white/10 text-slate-300 flex items-center gap-2 font-mono tracking-widest uppercase text-sm"
+          >
+            Cancelar
+          </Focusable>
+          <Focusable
+            id="modal-save"
+            testId="btn-modal-save"
+            onSelect={handleSave}
+            className={`px-5 h-11 rounded-xl bg-pink-500/30 border border-pink-400/50 text-pink-100 flex items-center gap-2 font-mono tracking-widest uppercase text-sm ${saving ? "opacity-50" : ""}`}
+          >
+            {saving ? "Guardando…" : "Guardar"}
+          </Focusable>
+        </div>
+      </div>
     </div>
   );
 }

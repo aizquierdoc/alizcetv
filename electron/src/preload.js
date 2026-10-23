@@ -1,4 +1,4 @@
-// Secure context bridge between renderer (React) and main (Node/Electron).
+﻿// Secure context bridge between renderer (React) and main (Node/Electron).
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("alizce", {
@@ -15,8 +15,14 @@ contextBridge.exposeInMainWorld("alizce", {
     listFolder: (share, folder) => ipcRenderer.invoke("smb:listFolder", { share, folder }),
   },
 
-  coinops: {
-    launch: () => ipcRenderer.invoke("coinops:launch"),
+  juego: {
+    list: () => ipcRenderer.invoke("juego:list"),
+    pickExe: () => ipcRenderer.invoke("juego:pickExe"),
+    pickCover: () => ipcRenderer.invoke("juego:pickCover"),
+    add: (payload) => ipcRenderer.invoke("juego:add", payload),
+    remove: (id) => ipcRenderer.invoke("juego:remove", id),
+    setCover: (payload) => ipcRenderer.invoke("juego:setCover", payload),
+    launch: (id) => ipcRenderer.invoke("juego:launch", id),
   },
 
   mpv: {

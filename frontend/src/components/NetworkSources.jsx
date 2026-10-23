@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { Film, Tv, DownloadCloud, HardDrive, Folder } from "lucide-react";
 import Focusable from "./Focusable";
 import { smbService, isElectron } from "../services/alizceApi";
@@ -23,7 +23,7 @@ export default function NetworkSources({ onOpenFolder }) {
           ...s,
           icon: Icon,
           cover: s.cover || COVERS[base] || COVERS.Peliculas,
-          count: s.count || (isElectron ? "Pulsa para explorar" : "— ítems"),
+          count: s.count || "",
         };
       });
       setShares(normalized);
@@ -32,15 +32,6 @@ export default function NetworkSources({ onOpenFolder }) {
 
   return (
     <section className="mt-16" data-testid="section-network">
-      <div className="flex items-baseline justify-between mb-5">
-        <h2 className="font-title text-xl lg:text-2xl text-white tracking-widest uppercase flex items-center gap-3">
-          <span className="inline-block w-2 h-6 bg-emerald-400 rounded-sm shadow-[0_0_12px_rgba(52,211,153,0.9)]" />
-          Red local
-        </h2>
-        <span className="text-xs tracking-[0.3em] uppercase text-slate-500 font-mono flex items-center gap-2">
-          <HardDrive size={12} /> SMB · {isElectron ? "en vivo" : "demo"}
-        </span>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
         {shares.map((f) => {
@@ -73,12 +64,6 @@ export default function NetworkSources({ onOpenFolder }) {
                   <h3 className="font-title text-2xl text-white uppercase tracking-wider">
                     {f.name}
                   </h3>
-                  <p className="text-xs text-slate-300 mt-1 font-mono tracking-wider">
-                    {f.count}
-                  </p>
-                  <p className="text-[10px] text-slate-500 mt-0.5 font-mono truncate">
-                    {f.path}
-                  </p>
                 </div>
               </div>
             </Focusable>

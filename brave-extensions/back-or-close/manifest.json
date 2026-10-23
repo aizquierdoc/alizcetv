@@ -1,8 +1,8 @@
 ﻿{
   "manifest_version": 3,
   "name": "Back or Close",
-  "version": "2.1",
-  "description": "Ctrl+W vuelve atras si hay historial, o cierra la ventana si estas en la home.",
+  "version": "5.0",
+  "description": "Clic derecho: volver atras o cerrar ventana.",
   "permissions": ["tabs", "windows"],
   "host_permissions": ["<all_urls>"],
   "background": {
@@ -13,7 +13,7 @@
       "matches": ["<all_urls>"],
       "js": ["content.js"],
       "run_at": "document_start",
-      "all_frames": false
+      "all_frames": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-// AlizceTV service layer — abstracts Electron APIs with mock fallback.
+﻿// AlizceTV service layer — abstracts Electron APIs with mock fallback.
 import {
   folderContents,
   networkFolders as mockNetworkFolders,
@@ -15,10 +15,8 @@ export const settingsService = {
     return {
       smbHost: "192.168.1.200",
       smbShares: ["Peliculas", "Series", "Descargas"],
-      coinopsPath: "",
       mpvPath: "",
       buttonMap: null,
-      coinopsBoost: true,
       adBlock: true,
     };
   },
@@ -105,16 +103,37 @@ export const tmdbService = {
   onProgress(cb) { if (api) return api.tmdb.onProgress(cb); return () => {}; },
 };
 
-// ----- CoinOps -----
-export const coinopsService = {
-  async launch() {
-    if (api) {
-      const res = await api.coinops.launch();
-      if (res.error) { alert(res.error); return false; }
-      return true;
-    }
-    alert("Lanzamiento de CoinOps solo disponible en la app de Windows.");
-    return false;
+
+// ----- Juegos / EXEs -----
+export const juegoService = {
+  async list() {
+    if (api) return api.juego.list();
+    return [];
+  },
+  async pickExe() {
+    if (api) return api.juego.pickExe();
+    return null;
+  },
+  async pickCover() {
+    if (api) return api.juego.pickCover();
+    return null;
+  },
+  async add(payload) {
+    if (api) return api.juego.add(payload);
+    return { error: "no-electron" };
+  },
+  async remove(id) {
+    if (api) return api.juego.remove(id);
+    return { ok: true };
+  },
+  async setCover(payload) {
+    if (api) return api.juego.setCover(payload);
+    return { ok: true };
+  },
+  async launch(id) {
+    if (api) return api.juego.launch(id);
+    alert("Solo disponible en la app de Windows.");
+    return { error: "no-electron" };
   },
 };
 

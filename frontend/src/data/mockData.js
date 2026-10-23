@@ -1,4 +1,4 @@
-// Mock data for AlizceTV prototype
+﻿// Mock data for AlizceTV prototype
 // Todas las imagenes se sirven desde /public/mock/ (locales, sin Unsplash).
 
 export const streamingPlatforms = [
@@ -89,11 +89,3 @@ export const aspectRatios = [
   { id: "stretch", label: "Estirar", css: "object-fill" },
   { id: "zoom", label: "Zoom", css: "object-cover" },
 ];
-
-export const arcadeTile = {
-  id: "arcade-coinops",
-  title: "CoinOps Arcade",
-  subtitle: "Lanzador Retro · RetroArch Integration",
-  badge: "RETRO ARCADE",
-  image: "./mock/arcade.jpg",
-};

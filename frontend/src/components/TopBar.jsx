@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+﻿import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Wifi, Settings, Power, Minus, X, AlertTriangle } from "lucide-react";
 import { systemService, isElectron } from "../services/alizceApi";
@@ -60,9 +60,6 @@ export default function TopBar() {
           <h1 className="font-title text-3xl lg:text-4xl logo-gradient leading-none whitespace-nowrap">
             ALIZCETV
           </h1>
-          <p className="text-[11px] tracking-[0.35em] uppercase text-slate-400 mt-1 font-mono">
-            Living Room Edition
-          </p>
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-// AlizceTV â€” Electron main process
+﻿// AlizceTV Ã¢â‚¬â€ Electron main process
 // Window, IPC bridge for SMB listing, settings, CoinOps launch, MPV control.
 
 const { app, BrowserWindow, ipcMain, dialog, shell, protocol, session, globalShortcut } = require("electron");
@@ -23,18 +23,17 @@ const store = new Store({
     smbShares: ["Peliculas", "Series", "Descargas"],
     smbUser: "guest",
     smbPassword: "",
-    coinopsPath: "",
     mpvPath: "",
     mpvTheme: "awesome-osc",
     platformModes: {},
     tmdbApiKey: "",
     lastScanAt: null,
     buttonMap: null,
+    juegos: [],
     iptvSources: [],
     iptvCache: {},
     iptvHidden: {},
     iptvFavorites: {},
-    coinopsBoost: true,
     youtubeDownloads: "",
     adBlock: true,
   },
@@ -245,26 +244,120 @@ ipcMain.handle("smb:listFolder", async (_e, { share, folder }) => {
   });
 });
 
-// ---------- CoinOps launcher ----------
-ipcMain.handle("coinops:launch", async () => {
-  const exe = store.get("coinopsPath");
-  if (!exe || !fs.existsSync(exe)) {
-    return { error: "Ruta a CoinOps.exe no configurada. Ve a Ajustes." };
+// ---------- Juegos / Emuladores ----------
+function coversDir() {
+  const dir = path.join(app.getPath("userData"), "juegos-covers");
+  try { fs.mkdirSync(dir, { recursive: true }); } catch (_) {}
+  return dir;
+}
+
+function launchExe(exe) {
+  if (!exe || !fs.existsSync(exe)) return false;
+  try {
+    spawn(exe, [], {
+      detached: true,
+      stdio: "ignore",
+      cwd: path.dirname(exe),
+    }).unref();
+    return true;
+  } catch (_) {
+    return false;
   }
-  const boost = store.get("coinopsBoost");
-  if (boost) {
-    killMpv();
-    mainWindow?.hide();
+}
+
+function copyCover(id, sourcePath) {
+  if (!sourcePath || !fs.existsSync(sourcePath)) return "";
+  const ext = (path.extname(sourcePath) || ".jpg").toLowerCase();
+  const dest = path.join(coversDir(), id + ext);
+  try {
+    fs.copyFileSync(sourcePath, dest);
+    return dest;
+  } catch (_) {
+    return "";
   }
-  if (process.platform === "win32") {
-    spawn("cmd.exe",
-      ["/c", "start", "/HIGH", "/B", "", `"${exe}"`],
-      { detached: true, stdio: "ignore", cwd: path.dirname(exe), shell: false, windowsVerbatimArguments: true }
-    ).unref();
+}
+
+function removeCoverFiles(id) {
+  const dir = coversDir();
+  try {
+    for (const f of fs.readdirSync(dir)) {
+      if (f.startsWith(id + ".")) {
+        try { fs.unlinkSync(path.join(dir, f)); } catch (_) {}
+      }
+    }
+  } catch (_) {}
+}
+
+ipcMain.handle("juego:list", () => store.get("juegos") || []);
+
+ipcMain.handle("juego:pickExe", async () => {
+  const res = await dialog.showOpenDialog(mainWindow, {
+    title: "Selecciona el ejecutable del juego",
+    properties: ["openFile"],
+    filters: [{ name: "Ejecutables", extensions: ["exe"] }],
+  });
+  if (res.canceled || !res.filePaths?.[0]) return null;
+  return res.filePaths[0];
+});
+
+ipcMain.handle("juego:pickCover", async () => {
+  const res = await dialog.showOpenDialog(mainWindow, {
+    title: "Selecciona la carátula",
+    properties: ["openFile"],
+    filters: [{ name: "Imágenes", extensions: ["jpg", "jpeg", "png", "webp"] }],
+  });
+  if (res.canceled || !res.filePaths?.[0]) return null;
+  return res.filePaths[0];
+});
+
+ipcMain.handle("juego:add", (_e, { path: exePath, title, type, coverSource }) => {
+  if (!exePath || !fs.existsSync(exePath)) return { error: "Ruta de ejecutable inválida" };
+  const id = "juego_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+  const name = path.basename(exePath).replace(/\.exe$/i, "");
+  const cleanTitle = (title || name).trim();
+  const cleanType = (type === "arcade" ? "arcade" : "otro");
+  let cover = "";
+  if (coverSource && coverSource.startsWith("preset:")) {
+    cover = coverSource; // preset, no copia
+  } else if (coverSource && fs.existsSync(coverSource)) {
+    cover = copyCover(id, coverSource);
+  }
+  const item = { id, path: exePath, name, title: cleanTitle, type: cleanType, cover };
+  const list = store.get("juegos") || [];
+  list.push(item);
+  store.set("juegos", list);
+  return { ok: true, item };
+});
+
+ipcMain.handle("juego:remove", (_e, id) => {
+  const list = store.get("juegos") || [];
+  store.set("juegos", list.filter((j) => j.id !== id));
+  removeCoverFiles(id);
+  return { ok: true };
+});
+
+ipcMain.handle("juego:setCover", (_e, { id, coverSource }) => {
+  const list = store.get("juegos") || [];
+  const item = list.find((j) => j.id === id);
+  if (!item) return { error: "Juego no encontrado" };
+  removeCoverFiles(id);
+  if (coverSource && coverSource.startsWith("preset:")) {
+    item.cover = coverSource;
+  } else if (coverSource && fs.existsSync(coverSource)) {
+    item.cover = copyCover(id, coverSource);
   } else {
-    spawn(exe, [], { detached: true, stdio: "ignore", cwd: path.dirname(exe) }).unref();
+    item.cover = "";
   }
-  return { ok: true, boosted: !!boost };
+  store.set("juegos", list);
+  return { ok: true, item };
+});
+
+ipcMain.handle("juego:launch", (_e, id) => {
+  const list = store.get("juegos") || [];
+  const item = list.find((j) => j.id === id);
+  if (!item) return { error: "Juego no encontrado" };
+  const ok = launchExe(item.path);
+  return ok ? { ok: true } : { error: "No se pudo lanzar el ejecutable" };
 });
 
 // ---------- MPV player ----------
@@ -344,7 +437,7 @@ function mpvSend(command) {
 
 ipcMain.handle("mpv:play", async (_e, { smbPath, share, folder, title }) => {
   const exe = resolveMpvPath();
-  if (!exe) return { error: "mpv.exe no encontrado. ConfigÃºralo en Ajustes." };
+  if (!exe) return { error: "mpv.exe no encontrado. ConfigÃƒÂºralo en Ajustes." };
 
   killMpv();
 
@@ -374,7 +467,7 @@ ipcMain.handle("mpv:play", async (_e, { smbPath, share, folder, title }) => {
   ];
 
   // MPV como proceso independiente (detached:true) SIN unref,
-  // asÃ­ conservamos su pid y su referencia.
+  // asÃƒÂ­ conservamos su pid y su referencia.
   mpvProc = spawn(exe, args, { detached: true, stdio: "ignore" });
   const mpvPid = mpvProc.pid;
 
@@ -417,7 +510,7 @@ ipcMain.handle("mpv:stop", async () => { killMpv(); return { ok: true }; });
 
 ipcMain.handle("mpv:playUrl", async (_e, { url, title }) => {
   const exe = resolveMpvPath();
-  if (!exe) return { error: "mpv.exe no encontrado. ConfigÃºralo en Ajustes." };
+  if (!exe) return { error: "mpv.exe no encontrado. ConfigÃƒÂºralo en Ajustes." };
   killMpv();
   const pipeName = "\\\\.\\pipe\\alizcetv-mpv";
   const args = [
@@ -787,7 +880,7 @@ function openCinema(url, label, options = {}) {
     width: 1920, height: 1080,
     fullscreen: true, frame: false,
     backgroundColor: "#000000",
-    title: `AlizceTV â€” ${label}`,
+    title: `AlizceTV Ã¢â‚¬â€ ${label}`,
     icon: path.join(__dirname, "..", "build", "icon.ico"),
     webPreferences: {
       contextIsolation: true, nodeIntegration: false,
@@ -896,7 +989,7 @@ function startYtDlp(url, quality) {
   proc.stdout?.on("data", updateStatus);
   proc.stderr?.on("data", updateStatus);
   proc.on("exit", (code) => {
-    updateStatus(code === 0 ? "âœ“ Descarga completada en " + outDir : "âœ— Error (cÃ³digo " + code + ")");
+    updateStatus(code === 0 ? "Ã¢Å“â€œ Descarga completada en " + outDir : "Ã¢Å“â€” Error (cÃƒÂ³digo " + code + ")");
   });
 }
 

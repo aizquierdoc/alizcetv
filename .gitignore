@@ -120,3 +120,8 @@ frontend/public/index.html.bak
 *.bak4
 *.bak5
 *.bak6
+
+# Backups de mojibake y scripts de correccion
+*.bak_mojibake
+fix-encoding.ps1
+fix-*.ps1
