@@ -125,3 +125,13 @@ frontend/public/index.html.bak
 *.bak_mojibake
 fix-encoding.ps1
 fix-*.ps1
+
+# Scripts temporales de fix
+clean-focus*.js
+fix-*.js
+write-*.js
+regenerate-*.js
+scan-*.js
+*.before_clean*
+*.before_*
+*.bak_*
