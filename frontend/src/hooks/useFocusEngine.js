@@ -1,23 +1,11 @@
-// Spatial focus engine for TV / gamepad navigation
+// Spatial focus engine for TV navigation with keyboard (arrows, Enter, Esc)
 // - Discovers focusable elements via [data-focusable="true"]
-// - Navigates with arrows + mapped gamepad buttons
 // - Lets native text inputs capture their own keystrokes
-// - Button mapping is read from window.alizce.settings when available
+// - Gamepad handling has been removed: only games use it, not AlizceTV UI
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
 const SELECTOR = '[data-focusable="true"]';
-
-// Default button mapping (can be overridden by user in Settings)
-export const DEFAULT_BUTTON_MAP = {
-  accept: 0,     // A
-  back: 1,       // B
-  menu: 3,       // Y
-  playpause: 0,  // A (same as accept, context-sensitive)
-  minimize: 8,   // Select / Back
-  shutdown: -1,  // Unmapped by default (user must set)
-  closeApp: -1,  // Unmapped by default (user must set)
-};
 
 function rectOf(el) {
   const r = el.getBoundingClientRect();
@@ -50,28 +38,8 @@ function isTypingContext() {
   return false;
 }
 
-// Load button map from Electron settings once, cache in-memory and refresh on event
-let CACHED_MAP = { ...DEFAULT_BUTTON_MAP };
-const mapListeners = new Set();
-export function getButtonMap() { return CACHED_MAP; }
-export function setButtonMap(next) {
-  CACHED_MAP = { ...CACHED_MAP, ...next };
-  mapListeners.forEach((fn) => fn(CACHED_MAP));
-}
-export function onButtonMapChange(fn) {
-  mapListeners.add(fn);
-  return () => mapListeners.delete(fn);
-}
-
-// Load map from Electron settings on module init
-if (typeof window !== "undefined" && window.alizce?.settings) {
-  window.alizce.settings.get().then((s) => {
-    if (s?.buttonMap) setButtonMap(s.buttonMap);
-  }).catch(() => {});
-}
-
 export function useFocusEngine(options = {}) {
-  const { enabled = true, onBack, onMenu, onPlayPause, onMinimize, onShutdown, onFavorite, onCloseApp } = options;
+  const { enabled = true, onBack, onMenu } = options;
   const [focusedId, setFocusedId] = useState(null);
   const focusedRef = useRef(null);
 
@@ -152,92 +120,13 @@ export function useFocusEngine(options = {}) {
       else if (key === "ArrowLeft")  move("left");
       else if (key === "ArrowRight") move("right");
       else if (key === "Enter")  confirm();
-      else if (key === " ")      { if (onPlayPause) onPlayPause(); else confirm(); }
+      else if (key === " ")      confirm();
       else if (key === "Escape" || key === "Backspace") onBack && onBack();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [enabled, move, confirm, onBack, onPlayPause]);
-
-  // ------- Gamepad -------
-  useEffect(() => {
-    if (!enabled) return;
-    let raf;
-    let lastNav = 0;
-    const DEAD = 0.5;
-    const COOLDOWN = 180;
-    const prevPressed = {};
-
-    const poll = () => {
-      if (isTypingContext()) {
-        // While typing in an input, still allow gamepad B (back) via menu button combo, but
-        // skip navigation + confirm actions to avoid typing noise.
-        raf = requestAnimationFrame(poll);
-        return;
-      }
-      const map = getButtonMap();
-      const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-      for (const pad of pads) {
-        if (!pad) continue;
-        const now = performance.now();
-        const [axH = 0, axV = 0] = pad.axes;
-        const dUp = pad.buttons[12]?.pressed;
-        const dDn = pad.buttons[13]?.pressed;
-        const dLt = pad.buttons[14]?.pressed;
-        const dRt = pad.buttons[15]?.pressed;
-        let dir = null;
-        if (dUp || axV < -DEAD) dir = "up";
-        else if (dDn || axV > DEAD) dir = "down";
-        else if (dLt || axH < -DEAD) dir = "left";
-        else if (dRt || axH > DEAD) dir = "right";
-        if (dir && now - lastNav > COOLDOWN) { move(dir); lastNav = now; }
-
-        // Mapped action buttons — edge-trigger (press start)
-        const check = (name, defaultCb) => {
-          const idx = map[name];
-          if (idx == null || idx < 0) return;
-          const pressed = pad.buttons[idx]?.pressed;
-          const k = `${pad.index}:${idx}:${name}`;
-          if (pressed && !prevPressed[k]) defaultCb?.();
-          prevPressed[k] = pressed;
-        };
-        check("accept", confirm);
-        check("back", onBack);
-        // When page provides onFavorite, Y maps to favorite; else to menu.
-        check("menu", onFavorite || onMenu);
-        check("playpause", onPlayPause);
-        check("minimize", onMinimize);
-	check("closeApp", onCloseApp);
-        check("shutdown", onShutdown);
-      }
-      raf = requestAnimationFrame(poll);
-    };
-    raf = requestAnimationFrame(poll);
-    return () => cancelAnimationFrame(raf);
-  }, [enabled, move, confirm, onBack, onMenu, onPlayPause, onMinimize, onShutdown, onFavorite, onCloseApp]);
+  }, [enabled, move, confirm, onBack]);
 
   return { focusedId, applyFocus, focusFirst, move, confirm };
 }
 
-// Utility: capture next gamepad button press, used by Settings mapping UI
-export function captureNextGamepadButton(timeoutMs = 10000) {
-  return new Promise((resolve) => {
-    const start = performance.now();
-    const prev = {};
-    const tick = () => {
-      const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-      for (const pad of pads) {
-        if (!pad) continue;
-        for (let i = 0; i < pad.buttons.length; i++) {
-          const b = pad.buttons[i];
-          const was = prev[i] || false;
-          if (b.pressed && !was) { resolve({ padIndex: pad.index, buttonIndex: i }); return; }
-          prev[i] = b.pressed;
-        }
-      }
-      if (performance.now() - start > timeoutMs) { resolve(null); return; }
-      requestAnimationFrame(tick);
-    };
-    tick();
-  });
-}

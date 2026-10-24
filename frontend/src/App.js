@@ -3,7 +3,6 @@ import { ConfirmProvider } from "./components/ConfirmProvider";
 import "./App.css";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import AuroraBackground from "./components/AuroraBackground";
-import CinemaExitWatcher from "./components/CinemaExitWatcher";
 import Home from "./pages/Home";
 import Juegos from "./pages/Juegos";
 import NetworkBrowser from "./pages/NetworkBrowser";
@@ -16,7 +15,6 @@ function App() {
     <ConfirmProvider>
     <div className="App">
       <AuroraBackground />
-      <CinemaExitWatcher />
       <div className="app-content">
         <HashRouter>
           <Routes>
